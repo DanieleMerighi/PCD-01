@@ -1,7 +1,7 @@
-package pcd.model;
+package pcd.poool.model;
 
-import pcd.controller.Direction;
-import java.util.ArrayList;
+import pcd.poool.controller.Direction;
+
 import java.util.List;
 
 public class Board {

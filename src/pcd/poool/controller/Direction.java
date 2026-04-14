@@ -1,6 +1,6 @@
-package pcd.controller;
+package pcd.poool.controller;
 
-import pcd.model.V2d;
+import pcd.poool.model.V2d;
 
 public enum Direction {
     UP(0,1),

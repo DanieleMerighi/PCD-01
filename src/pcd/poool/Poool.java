@@ -1,11 +1,11 @@
-package pcd;
+package pcd.poool;
 
-import pcd.controller.ActiveController;
-import pcd.model.AutonomousUpdater;
-import pcd.model.Board;
-import pcd.model.MassiveBoardConf;
-import pcd.view.ViewModel;
-import pcd.view.View;
+import pcd.poool.controller.ActiveController;
+import pcd.poool.model.AutonomousUpdater;
+import pcd.poool.model.Board;
+import pcd.poool.model.MassiveBoardConf;
+import pcd.poool.view.ViewModel;
+import pcd.poool.view.View;
 
 public class Poool {
     public static void main(String[] argv) {

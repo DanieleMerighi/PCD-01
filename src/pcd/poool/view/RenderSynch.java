@@ -1,4 +1,4 @@
-package pcd.view;
+package pcd.poool.view;
 
 public class RenderSynch {
 

@@ -1,6 +1,6 @@
-package pcd.controller;
+package pcd.poool.controller;
 
-import pcd.model.Board;
+import pcd.poool.model.Board;
 import pcd.sketch02.util.BoundedBuffer;
 import pcd.sketch02.util.BoundedBufferImpl;
 

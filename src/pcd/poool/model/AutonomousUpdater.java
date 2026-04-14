@@ -1,4 +1,4 @@
-package pcd.model;
+package pcd.poool.model;
 
 import java.util.ArrayList;
 import java.util.List;

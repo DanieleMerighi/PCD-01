@@ -1,7 +1,7 @@
-package pcd.view;
+package pcd.poool.view;
 
-import pcd.model.Board;
-import pcd.model.P2d;
+import pcd.poool.model.Board;
+import pcd.poool.model.P2d;
 
 import java.util.ArrayList;
 

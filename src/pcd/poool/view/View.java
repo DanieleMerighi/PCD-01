@@ -1,9 +1,9 @@
-package pcd.view;
+package pcd.poool.view;
 
 
-import pcd.controller.ActiveController;
-import pcd.model.Board;
-import pcd.model.BoardObserver;
+import pcd.poool.controller.ActiveController;
+import pcd.poool.model.Board;
+import pcd.poool.model.BoardObserver;
 
 import javax.swing.*;
 

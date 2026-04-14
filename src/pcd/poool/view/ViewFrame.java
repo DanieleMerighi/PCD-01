@@ -1,8 +1,8 @@
-package pcd.view;
+package pcd.poool.view;
 
-import pcd.controller.ArrowKeyCmd;
-import pcd.controller.Direction;
-import pcd.controller.ActiveController;
+import pcd.poool.controller.ArrowKeyCmd;
+import pcd.poool.controller.Direction;
+import pcd.poool.controller.ActiveController;
 
 import javax.swing.*;
 import java.awt.*;
