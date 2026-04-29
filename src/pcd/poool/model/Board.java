@@ -1,25 +1,21 @@
 package pcd.poool.model;
 
-import pcd.poool.controller.Direction;
-
 import java.util.List;
 
 public class Board {
     public static final double VELOCITY_FACTOR = 1.5;
 
-    private List<Ball> balls;
-    private Ball playerBall;
-    private Boundary bounds;
+    private final List<Ball> balls;
+    private final Ball playerBall;
+    private final Boundary bounds;
     
-    public Board(){} 
-    
-    public void init(BoardConf conf) {
-    	balls = conf.getSmallBalls();    	
-    	playerBall = conf.getPlayerBall(); 
-    	bounds = conf.getBoardBoundary();
+    public Board(BoardConf conf){
+        balls = conf.getSmallBalls();
+        playerBall = conf.getPlayerBall();
+        bounds = conf.getBoardBoundary();
     }
     
-    public void updateState(long dt) {
+    public synchronized void updateState(long dt) {
     	playerBall.updateState(dt, this);
     	
     	for (var b: balls) {
@@ -35,21 +31,21 @@ public class Board {
     	}
     }
 
-    public void kickPlayerBall(Direction direction) {
+    public synchronized void kickPlayerBall(Direction direction) {
         var velocity = direction.getVector().mul(VELOCITY_FACTOR);
         if (playerBall.getVel().abs() < 0.05)
             playerBall.kick(velocity);
     }
     
-    public List<Ball> getBalls(){
+    public synchronized List<Ball> getBalls(){
     	return balls;
     }
     
-    public Ball getPlayerBall() {
+    public synchronized Ball getPlayerBall() {
     	return playerBall;
     }
     
-    public  Boundary getBounds(){
+    public synchronized Boundary getBounds(){
         return bounds;
     }
 }

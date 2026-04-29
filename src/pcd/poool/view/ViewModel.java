@@ -1,9 +1,10 @@
 package pcd.poool.view;
 
-import pcd.poool.model.Board;
+import pcd.poool.model.Ball;
 import pcd.poool.model.P2d;
 
 import java.util.ArrayList;
+import java.util.List;
 
 record BallViewInfo(P2d pos, double radius) {}
 
@@ -18,14 +19,13 @@ public class ViewModel {
 		framePerSec = 0;
 	}
 	
-	public synchronized void update(Board board, int framePerSec) {
-		balls.clear();
-		for (var b: board.getBalls()) {
-			balls.add(new BallViewInfo(b.getPos(), b.getRadius()));
+	public synchronized void update(List<Ball> ballList, Ball playerBall, int framePerSec) {
+		this.balls.clear();
+		for (var ball: ballList) {
+			this.balls.add(new BallViewInfo(ball.getPos(), ball.getRadius()));
 		}
 		this.framePerSec = framePerSec;
-		var p = board.getPlayerBall();
-		player = new BallViewInfo(p.getPos(), p.getRadius());
+		this.player = new BallViewInfo(playerBall.getPos(), playerBall.getRadius());
 	}
 
 	synchronized ArrayList<BallViewInfo> getBalls(){

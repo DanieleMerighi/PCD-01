@@ -1,19 +1,21 @@
 package pcd.poool.view;
 
-
-import pcd.poool.controller.ActiveController;
-import pcd.poool.model.Board;
+import pcd.poool.controller.Cmd;
+import pcd.poool.model.Ball;
 import pcd.poool.model.BoardObserver;
+import pcd.poool.util.BoundedBuffer;
 
 import javax.swing.*;
+import java.util.List;
 
 public class View implements BoardObserver {
 
 	private final ViewFrame frame;
 	private final ViewModel viewModel;
 
-	public View(ViewModel model, ActiveController controller, int w, int h) {
-		frame = new ViewFrame(model, controller, w, h);
+
+	public View(ViewModel model, BoundedBuffer<Cmd> cmdBuffer, int w, int h) {
+		this.frame = new ViewFrame(model, cmdBuffer, w, h);
 		this.viewModel = model;
 	}
 
@@ -22,8 +24,8 @@ public class View implements BoardObserver {
 	}
 
 	@Override
-	public void modelUpdated(Board board, int framePerSec) {
-		viewModel.update(board, framePerSec);
-		frame.render();
+	public void modelUpdated(List<Ball> ballList, Ball playerBall, int framePerSec) {
+		this.viewModel.update(ballList, playerBall, framePerSec);
+		this.frame.render();
 	}
 }

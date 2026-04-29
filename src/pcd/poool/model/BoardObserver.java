@@ -1,5 +1,7 @@
 package pcd.poool.model;
 
+import java.util.List;
+
 public interface BoardObserver {
-    void modelUpdated(Board board, int framePerSec);
+    void modelUpdated(List<Ball> ballList, Ball playerBall, int framePerSec);
 }

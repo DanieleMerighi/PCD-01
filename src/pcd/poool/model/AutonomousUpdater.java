@@ -8,11 +8,12 @@ public class AutonomousUpdater extends Thread {
 	private final Board board;
 	private final List<BoardObserver> observers;
 	
-	public AutonomousUpdater(Board board) {
+	public AutonomousUpdater(Board board, List<BoardObserver> observers) {
 		this.board = board;
-		this.observers = new ArrayList<>();
+		this.observers = new ArrayList<>(observers);
 	}
 
+	@Override
 	public void run() {
 		int nFrames = 0;
 		long t0 = System.currentTimeMillis();
@@ -34,13 +35,9 @@ public class AutonomousUpdater extends Thread {
 		}
 	}
 
-	public void addObserver(BoardObserver o) {
-		observers.add(o);
-	}
-
 	private void notifyObservers(int framePerSec) {
 		for (var o: observers) {
-			o.modelUpdated(board, framePerSec);
+			o.modelUpdated(board.getBalls(), board.getPlayerBall(), framePerSec);
 		}
 	}
 }

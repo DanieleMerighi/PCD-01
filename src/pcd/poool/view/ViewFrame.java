@@ -1,8 +1,9 @@
 package pcd.poool.view;
 
 import pcd.poool.controller.ArrowKeyCmd;
-import pcd.poool.controller.Direction;
-import pcd.poool.controller.ActiveController;
+import pcd.poool.controller.Cmd;
+import pcd.poool.model.Direction;
+import pcd.poool.util.BoundedBuffer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,12 +16,12 @@ public class ViewFrame extends JFrame implements KeyListener {
 
 	private final VisualiserPanel panel;
 	private final ViewModel viewModel;
-	private final ActiveController controller;
+	private final BoundedBuffer<Cmd> cmdBuffer;
 
-	public ViewFrame(ViewModel viewModel, ActiveController controller, int w, int h){
+	public ViewFrame(ViewModel viewModel, BoundedBuffer<Cmd> cmdBuffer, int w, int h){
 		this.viewModel = viewModel;
-		this.controller = controller;
-		setTitle("Sketch 03");
+		this.cmdBuffer = cmdBuffer;
+		setTitle("Poool");
 		setSize(w,h + 25);
 		setResizable(false);
 		panel = new VisualiserPanel(w,h);
@@ -106,14 +107,14 @@ public class ViewFrame extends JFrame implements KeyListener {
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		if (e.getExtendedKeyCode() == KeyEvent.VK_UP){
-			controller.notifyNewCmd(new ArrowKeyCmd(Direction.UP));
-		} else if (e.getExtendedKeyCode() == KeyEvent.VK_LEFT){
-			controller.notifyNewCmd(new ArrowKeyCmd(Direction.LEFT));
-		} else if (e.getExtendedKeyCode() == KeyEvent.VK_DOWN){
-			controller.notifyNewCmd(new ArrowKeyCmd(Direction.DOWN));
-		} else if (e.getExtendedKeyCode() == KeyEvent.VK_RIGHT){
-			controller.notifyNewCmd(new ArrowKeyCmd(Direction.RIGHT));
+		if (e.getExtendedKeyCode() == KeyEvent.VK_UP) {
+			cmdBuffer.put(new ArrowKeyCmd(Direction.UP));
+		} else if (e.getExtendedKeyCode() == KeyEvent.VK_LEFT) {
+			cmdBuffer.put(new ArrowKeyCmd(Direction.LEFT));
+		} else if (e.getExtendedKeyCode() == KeyEvent.VK_DOWN) {
+			cmdBuffer.put(new ArrowKeyCmd(Direction.DOWN));
+		} else if (e.getExtendedKeyCode() == KeyEvent.VK_RIGHT) {
+			cmdBuffer.put(new ArrowKeyCmd(Direction.RIGHT));
 		}
 	}
 
