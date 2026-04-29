@@ -6,6 +6,7 @@ public class Ball {
     private V2d vel;
     private final double radius;
     private final double mass;
+    private HitCredit hitCredit;
     
     private static final double FRICTION_FACTOR = 0.25; 	/* 0 minimum */
     private static final double RESTITUTION_FACTOR = 1;
@@ -15,6 +16,7 @@ public class Ball {
        this.radius = radius;
        this.mass = mass;
        this.vel = vel;
+       this.hitCredit = HitCredit.NONE;
     }
 
     public void updateState(long dt, Board ctx){
@@ -58,7 +60,7 @@ public class Ball {
     /**
      * Resolving collision between 2 balls, updating their position and velocity
      */
-    public static void resolveCollision(Ball a, Ball b) {
+    public static boolean resolveCollision(Ball a, Ball b) {
         
     	/* check if there is a collision */
     	
@@ -123,9 +125,16 @@ public class Ball {
 	        	a.vel = new V2d(a.vel.x() - (imp / a.mass) * nx, a.vel.y() - (imp / a.mass) * ny);                
 	        	b.vel = new V2d(b.vel.x() + (imp / b.mass) * nx, b.vel.y() + (imp / b.mass) * ny);
 	        }
+            return true;
         }
+        return false;
     }
 
+    public boolean resolveHole(Hole hole) {
+        var dx = pos.x() - hole.pos().x();
+        var dy = pos.y() - hole.pos().y();
+        return Math.hypot(dx, dy) < hole.radius();
+    }
     
     public P2d getPos(){        
     	return pos;
@@ -141,6 +150,14 @@ public class Ball {
     
     public double getRadius() {
     	return radius;
+    }
+
+    public HitCredit getHitCredit() {
+        return this.hitCredit;
+    }
+
+    public void setHitCredit(HitCredit hitCredit) {
+        this.hitCredit = hitCredit;
     }
 
 }

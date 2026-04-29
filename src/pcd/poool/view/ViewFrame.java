@@ -106,6 +106,18 @@ public class ViewFrame extends JFrame implements KeyListener {
 			g2.setStroke(new BasicStroke(1));
 			g2.drawString("Num small balls: " + viewModel.getBalls().size(), 20, 2 * oy - 60);
 			g2.drawString("Frame per sec: " + viewModel.getFramePerSec(), 20, 2 * oy - 40);
+
+			g2.setColor(Color.BLUE);
+			String playerScore = String.valueOf(viewModel.getPlayerScore());
+			int x0 = (int)(0.2 * ox);
+			int y0 = (int)(1.4 * oy);
+			g2.setFont(new Font("Arial", Font.PLAIN, 90));
+			g2.drawString(playerScore, x0, y0);
+
+			String botScore = String.valueOf(viewModel.getBotScore());
+			x0 = (int)(1.7 * ox);
+			y0 = (int)(1.4 * oy);
+			g2.drawString(botScore, x0, y0);
 		}
 
 	}

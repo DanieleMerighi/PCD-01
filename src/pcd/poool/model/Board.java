@@ -1,5 +1,10 @@
 package pcd.poool.model;
 
+import pcd.poool.view.BallViewInfo;
+import pcd.poool.view.BoardViewInfo;
+import pcd.poool.view.HoleViewInfo;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
@@ -9,6 +14,8 @@ public class Board {
     private final Ball playerBall;
     private final Boundary bounds;
     private final List<Hole> holes;
+    private int playerScore;
+    private int botScore;
 
     public Board(BoardConf conf){
         balls = conf.getSmallBalls();
@@ -23,20 +30,41 @@ public class Board {
     	for (var b: balls) {
     		b.updateState(dt, this);
     	}
+        for (var hole: holes) {
+            if (playerBall.resolveHole(hole)) {
+                //return MORTE FINE PARTITAAAAA
+            }
+            for (var b: List.copyOf(balls)) {
+                if (b.resolveHole(hole)) {
+                    switch (b.getHitCredit()){
+                        case BOT -> botScore++;
+                        case PLAYER -> playerScore++;
+                    }
+                    balls.remove(b);
+                    System.out.println("removed ballll. Balls: " + balls.size());
+                }
+            }
+        }
     	for (int i = 0; i < balls.size() - 1; i++) {
             for (int j = i + 1; j < balls.size(); j++) {
-                Ball.resolveCollision(balls.get(i), balls.get(j));
+                if (Ball.resolveCollision(balls.get(i), balls.get(j))) {
+                    balls.get(i).setHitCredit(HitCredit.NONE);
+                    balls.get(j).setHitCredit(HitCredit.NONE);
+                }
+
             }
         }
     	for (var b: balls) {
-    		Ball.resolveCollision(playerBall, b);
+    		if (Ball.resolveCollision(playerBall, b)) {
+                b.setHitCredit(HitCredit.PLAYER);
+            }
     	}
     }
 
     public synchronized void kickPlayerBall(Direction direction) {
         var velocity = direction.getVector().mul(VELOCITY_FACTOR);
-        if (playerBall.getVel().abs() < 0.05)
-            playerBall.kick(velocity);
+        playerBall.kick(velocity);
+
     }
     
     public synchronized List<Ball> getBalls(){
@@ -51,7 +79,16 @@ public class Board {
         return bounds;
     }
 
-    public synchronized List<Hole> getHoles() {
-        return holes;
+    public synchronized BoardViewInfo getBoardViewInfo() {
+        var player = new BallViewInfo(playerBall.getPos(), playerBall.getRadius());
+        var ballList = new ArrayList<BallViewInfo>();
+        for (var ball: balls) {
+            ballList.add(new BallViewInfo(ball.getPos(), ball.getRadius()));
+        }
+        var holeList = new ArrayList<HoleViewInfo>();
+        for (var hole: holes) {
+            holeList.add(new HoleViewInfo(hole.pos(), hole.radius()));
+        }
+        return new BoardViewInfo(player, ballList, holeList, playerScore, botScore);
     }
 }

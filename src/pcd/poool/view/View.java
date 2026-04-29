@@ -25,8 +25,8 @@ public class View implements BoardObserver {
 	}
 
 	@Override
-	public void modelUpdated(List<Ball> ballList, Ball playerBall, List<Hole> holeList, int framePerSec) {
-		this.viewModel.update(ballList, playerBall, holeList, framePerSec);
+	public void modelUpdated(BoardViewInfo boardViewInfo, int framePerSec) {
+		this.viewModel.update(boardViewInfo, framePerSec);
 		this.frame.render();
 	}
 }

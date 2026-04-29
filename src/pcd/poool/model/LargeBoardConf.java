@@ -33,7 +33,7 @@ public class LargeBoardConf implements BoardConf {
 
 	@Override
 	public List<Hole> getHoles() {
-		var radius = 0.15;
+		var radius = 0.2;
 		return List.of(new Hole(new P2d(-1.5, 1.0), radius),
 				new Hole(new P2d(1.5, 1.0), radius));
 	}
