@@ -1,6 +1,7 @@
 package pcd.poool.controller;
 
 import pcd.poool.model.Board;
+import pcd.poool.model.Direction;
 
 public class ArrowKeyCmd implements Cmd {
     private final Direction direction;
