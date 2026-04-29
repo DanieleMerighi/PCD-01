@@ -38,9 +38,11 @@ public class Board {
     	}
         for (var hole: holes) {
             if (playerBall.resolveHole(hole)) {
+                System.out.println("Player died");
                 System.exit(1);
             }
             if (botBall.resolveHole(hole)) {
+                System.out.println("Bot died");
                 System.exit(2);
             }
             for (var b: List.copyOf(balls)) {
@@ -53,6 +55,10 @@ public class Board {
                     System.out.println("removed ballll. Balls: " + balls.size());
                 }
             }
+        }
+        if (balls.isEmpty()) {
+            System.out.println("Balll ended!");
+            System.exit(-1);
         }
     	for (int i = 0; i < balls.size() - 1; i++) {
             for (int j = i + 1; j < balls.size(); j++) {

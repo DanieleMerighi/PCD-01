@@ -13,8 +13,8 @@ public class Poool {
     public static void main(String[] argv) {
 
         // var boardConf = new MinimalBoardConf();
-        // var boardConf = new LargeBoardConf();
-        var boardConf = new MassiveBoardConf();
+        var boardConf = new LargeBoardConf();
+        // var boardConf = new MassiveBoardConf();
 
         Board board = new Board(boardConf);
 
