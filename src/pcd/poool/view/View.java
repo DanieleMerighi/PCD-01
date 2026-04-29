@@ -3,6 +3,7 @@ package pcd.poool.view;
 import pcd.poool.controller.Cmd;
 import pcd.poool.model.Ball;
 import pcd.poool.model.BoardObserver;
+import pcd.poool.model.Hole;
 import pcd.poool.util.BoundedBuffer;
 
 import javax.swing.*;
@@ -24,8 +25,8 @@ public class View implements BoardObserver {
 	}
 
 	@Override
-	public void modelUpdated(List<Ball> ballList, Ball playerBall, int framePerSec) {
-		this.viewModel.update(ballList, playerBall, framePerSec);
+	public void modelUpdated(List<Ball> ballList, Ball playerBall, List<Hole> holeList, int framePerSec) {
+		this.viewModel.update(ballList, playerBall, holeList, framePerSec);
 		this.frame.render();
 	}
 }

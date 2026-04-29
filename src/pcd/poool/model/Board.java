@@ -8,11 +8,13 @@ public class Board {
     private final List<Ball> balls;
     private final Ball playerBall;
     private final Boundary bounds;
-    
+    private final List<Hole> holes;
+
     public Board(BoardConf conf){
         balls = conf.getSmallBalls();
         playerBall = conf.getPlayerBall();
         bounds = conf.getBoardBoundary();
+        holes = conf.getHoles();
     }
     
     public synchronized void updateState(long dt) {
@@ -47,5 +49,9 @@ public class Board {
     
     public synchronized Boundary getBounds(){
         return bounds;
+    }
+
+    public synchronized List<Hole> getHoles() {
+        return holes;
     }
 }

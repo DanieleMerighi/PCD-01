@@ -7,7 +7,7 @@ public class LargeBoardConf implements BoardConf {
 
 	@Override
 	public Ball getPlayerBall() {
-		return  new Ball(new P2d(0, -0.75), 0.05, 1.5, new V2d(0,1)); 
+		return new Ball(new P2d(0, -0.75), 0.05, 1.5, new V2d(0,1));
 	}
 
 	@Override
@@ -26,7 +26,15 @@ public class LargeBoardConf implements BoardConf {
     	return balls;
 	}
 
+	@Override
 	public Boundary getBoardBoundary() {
         return new Boundary(-1.5,-1.0,1.5,1.0);
+	}
+
+	@Override
+	public List<Hole> getHoles() {
+		var radius = 0.15;
+		return List.of(new Hole(new P2d(-1.5, 1.0), radius),
+				new Hole(new P2d(1.5, 1.0), radius));
 	}
 }

@@ -25,4 +25,11 @@ public class MinimalBoardConf implements BoardConf {
         return new Boundary(-1.5,-1.0,1.5,1.0);
 	}
 
+	@Override
+	public List<Hole> getHoles() {
+		var radius = 0.15;
+		return List.of(new Hole(new P2d(-1.5 - radius, -1.0 - radius), radius),
+				new Hole(new P2d(1.5 + radius, -1.0 - radius), radius));
+	}
+
 }

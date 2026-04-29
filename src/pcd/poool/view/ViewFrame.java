@@ -73,6 +73,15 @@ public class ViewFrame extends JFrame implements KeyListener {
 			g2.drawLine(0,oy,ox*2,oy);
 			g2.setColor(Color.BLACK);
 
+			for (var hole: viewModel.getHoles()) {
+				var p = hole.pos();
+				int x0 = (int)(ox + p.x()*delta);
+				int y0 = (int)(oy - p.y()*delta);
+				int radiusX = (int)(hole.radius()*delta);
+				int radiusY = (int)(hole.radius()*delta);
+				g2.fillOval(x0 - radiusX,y0 - radiusY,radiusX * 2,radiusY * 2);
+			}
+
 			g2.setStroke(new BasicStroke(1));
 			for (var b: viewModel.getBalls()) {
 				var p = b.pos();
@@ -95,8 +104,8 @@ public class ViewFrame extends JFrame implements KeyListener {
 			}
 
 			g2.setStroke(new BasicStroke(1));
-			g2.drawString("Num small balls: " + viewModel.getBalls().size(), 20, 40);
-			g2.drawString("Frame per sec: " + viewModel.getFramePerSec(), 20, 60);
+			g2.drawString("Num small balls: " + viewModel.getBalls().size(), 20, 2 * oy - 60);
+			g2.drawString("Frame per sec: " + viewModel.getFramePerSec(), 20, 2 * oy - 40);
 		}
 
 	}

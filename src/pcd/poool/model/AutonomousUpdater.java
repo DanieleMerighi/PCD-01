@@ -37,7 +37,7 @@ public class AutonomousUpdater extends Thread {
 
 	private void notifyObservers(int framePerSec) {
 		for (var o: observers) {
-			o.modelUpdated(board.getBalls(), board.getPlayerBall(), framePerSec);
+			o.modelUpdated(board.getBalls(), board.getPlayerBall(), board.getHoles(), framePerSec);
 		}
 	}
 }
