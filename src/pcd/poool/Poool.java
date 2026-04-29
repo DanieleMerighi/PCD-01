@@ -3,6 +3,8 @@ package pcd.poool;
 import pcd.poool.controller.ActiveController;
 import pcd.poool.model.AutonomousUpdater;
 import pcd.poool.model.Board;
+import pcd.poool.model.MinimalBoardConf;
+import pcd.poool.model.LargeBoardConf;
 import pcd.poool.model.MassiveBoardConf;
 import pcd.poool.view.ViewModel;
 import pcd.poool.view.View;
@@ -11,8 +13,8 @@ public class Poool {
     public static void main(String[] argv) {
 
         // var boardConf = new MinimalBoardConf();
-        // var boardConf = new LargeBoardConf();
-        var boardConf = new MassiveBoardConf();
+        var boardConf = new LargeBoardConf();
+        // var boardConf = new MassiveBoardConf();
 
         Board board = new Board();
         board.init(boardConf);

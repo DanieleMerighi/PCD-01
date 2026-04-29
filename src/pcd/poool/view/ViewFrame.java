@@ -13,9 +13,9 @@ import java.awt.event.WindowEvent;
 
 public class ViewFrame extends JFrame implements KeyListener {
 
-	private VisualiserPanel panel;
-	private ViewModel viewModel;
-	private ActiveController controller;
+	private final VisualiserPanel panel;
+	private final ViewModel viewModel;
+	private final ActiveController controller;
 
 	public ViewFrame(ViewModel viewModel, ActiveController controller, int w, int h){
 		this.viewModel = viewModel;
@@ -46,9 +46,9 @@ public class ViewFrame extends JFrame implements KeyListener {
 	}
 
 	public class VisualiserPanel extends JPanel {
-		private int ox;
-		private int oy;
-		private int delta;
+		private final int ox;
+		private final int oy;
+		private final int delta;
 
 		public VisualiserPanel(int w, int h){
 			setSize(w,h + 25);

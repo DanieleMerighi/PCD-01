@@ -9,20 +9,16 @@ import javax.swing.*;
 
 public class View implements BoardObserver {
 
-	private ViewFrame frame;
-	private ViewModel viewModel;
-	private ActiveController controller;
-	
+	private final ViewFrame frame;
+	private final ViewModel viewModel;
+
 	public View(ViewModel model, ActiveController controller, int w, int h) {
-		this.controller = controller;
 		frame = new ViewFrame(model, controller, w, h);
 		this.viewModel = model;
 	}
 
 	public void display() {
-		SwingUtilities.invokeLater(() -> {
-			frame.setVisible(true);
-		});
+		SwingUtilities.invokeLater(() -> frame.setVisible(true));
 	}
 
 	@Override

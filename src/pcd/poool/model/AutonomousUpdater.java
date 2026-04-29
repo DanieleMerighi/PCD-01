@@ -5,8 +5,8 @@ import java.util.List;
 
 public class AutonomousUpdater extends Thread {
 
-	private Board board;
-	private List<BoardObserver> observers;
+	private final Board board;
+	private final List<BoardObserver> observers;
 	
 	public AutonomousUpdater(Board board) {
 		this.board = board;
