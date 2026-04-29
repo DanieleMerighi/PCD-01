@@ -22,10 +22,10 @@ public class ViewFrame extends JFrame implements KeyListener {
 		this.viewModel = viewModel;
 		this.cmdBuffer = cmdBuffer;
 		setTitle("Poool");
-		setSize(w,h + 25);
 		setResizable(false);
 		panel = new VisualiserPanel(w,h);
 		getContentPane().add(panel);
+		pack();
 
 		this.addKeyListener(this);
 		setFocusable(true);
@@ -52,7 +52,7 @@ public class ViewFrame extends JFrame implements KeyListener {
 		private final int delta;
 
 		public VisualiserPanel(int w, int h){
-			setSize(w,h + 25);
+			setPreferredSize(new Dimension(w,h));
 			ox = w/2;
 			oy = h/2;
 			delta = Math.min(ox, oy);
