@@ -13,8 +13,8 @@ public class Poool {
     public static void main(String[] argv) {
 
         // var boardConf = new MinimalBoardConf();
-        var boardConf = new LargeBoardConf();
-        // var boardConf = new MassiveBoardConf();
+        // var boardConf = new LargeBoardConf();
+        var boardConf = new MassiveBoardConf();
 
         Board board = new Board(boardConf);
 
@@ -23,7 +23,7 @@ public class Poool {
         var controller = new ActiveController(board, cmdBuffer);
         controller.start();
 
-        var viewModel = new ViewModel();
+        var viewModel = new ViewModel(board.getBoardViewInfo());
         var view = new View(viewModel, cmdBuffer, 1200, 800);
 
         var updater = new AutonomousUpdater(board, List.of(view));

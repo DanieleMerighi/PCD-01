@@ -26,7 +26,7 @@ public class Board {
         botBall = conf.getBotBall();
         bounds = conf.getBoardBoundary();
         holes = conf.getHoles();
-        random = new Random(2);
+        random = new Random(System.currentTimeMillis());
     }
     
     public synchronized void updateState(long dt) {
@@ -38,10 +38,10 @@ public class Board {
     	}
         for (var hole: holes) {
             if (playerBall.resolveHole(hole)) {
-                //return MORTE FINE PARTITAAAAA
+                System.exit(1);
             }
             if (botBall.resolveHole(hole)) {
-                //return bot scemo
+                System.exit(2);
             }
             for (var b: List.copyOf(balls)) {
                 if (b.resolveHole(hole)) {
@@ -60,7 +60,6 @@ public class Board {
                     balls.get(i).setHitCredit(HitCredit.NONE);
                     balls.get(j).setHitCredit(HitCredit.NONE);
                 }
-
             }
         }
     	for (var b: balls) {

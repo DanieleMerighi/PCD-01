@@ -101,6 +101,7 @@ public class ViewFrame extends JFrame implements KeyListener {
 				int radiusX = (int)(pb.radius()*delta);
 				int radiusY = (int)(pb.radius()*delta);
 				g2.drawOval(x0 - radiusX,y0 - radiusY,radiusX*2,radiusY*2);
+				g2.drawString("H", x0 - 4, y0 + 4);
 			}
 
 			var botBall = viewModel.getBotBall();
@@ -111,6 +112,7 @@ public class ViewFrame extends JFrame implements KeyListener {
 				int radiusX = (int)(botBall.radius()*delta);
 				int radiusY = (int)(botBall.radius()*delta);
 				g2.drawOval(x0 - radiusX,y0 - radiusY,radiusX*2,radiusY*2);
+				g2.drawString("B", x0 - 4, y0 + 4);
 			}
 
 			g2.setStroke(new BasicStroke(1));

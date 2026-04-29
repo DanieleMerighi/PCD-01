@@ -7,8 +7,9 @@ public class ViewModel {
 	private BoardViewInfo boardViewInfo;
 	private int framePerSec;
 
-	public ViewModel() {
+	public ViewModel(BoardViewInfo boardViewInfo) {
 		framePerSec = 0;
+		this.boardViewInfo = boardViewInfo;
 	}
 	
 	public synchronized void update(BoardViewInfo boardViewInfo, int framePerSec) {
@@ -39,6 +40,7 @@ public class ViewModel {
 	synchronized int getPlayerScore() {
 		return boardViewInfo.playerScore();
 	}
+
 	synchronized int getBotScore() {
 		return boardViewInfo.botScore();
 	}
