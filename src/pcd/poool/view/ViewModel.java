@@ -28,6 +28,10 @@ public class ViewModel {
 		return boardViewInfo.player();
 	}
 
+	synchronized BallViewInfo getBotBall() {
+		return boardViewInfo.bot();
+	}
+
 	synchronized ArrayList<HoleViewInfo> getHoles() {
 		return new ArrayList<>(boardViewInfo.holes());
 	}

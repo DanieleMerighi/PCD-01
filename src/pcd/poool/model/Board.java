@@ -6,26 +6,32 @@ import pcd.poool.view.HoleViewInfo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Board {
     public static final double VELOCITY_FACTOR = 1.5;
 
     private final List<Ball> balls;
     private final Ball playerBall;
+    private final Ball botBall;
     private final Boundary bounds;
     private final List<Hole> holes;
     private int playerScore;
     private int botScore;
+    private final Random random;
 
     public Board(BoardConf conf){
         balls = conf.getSmallBalls();
         playerBall = conf.getPlayerBall();
+        botBall = conf.getBotBall();
         bounds = conf.getBoardBoundary();
         holes = conf.getHoles();
+        random = new Random(2);
     }
     
     public synchronized void updateState(long dt) {
     	playerBall.updateState(dt, this);
+        botBall.updateState(dt, this);
     	
     	for (var b: balls) {
     		b.updateState(dt, this);
@@ -33,6 +39,9 @@ public class Board {
         for (var hole: holes) {
             if (playerBall.resolveHole(hole)) {
                 //return MORTE FINE PARTITAAAAA
+            }
+            if (botBall.resolveHole(hole)) {
+                //return bot scemo
             }
             for (var b: List.copyOf(balls)) {
                 if (b.resolveHole(hole)) {
@@ -58,29 +67,30 @@ public class Board {
     		if (Ball.resolveCollision(playerBall, b)) {
                 b.setHitCredit(HitCredit.PLAYER);
             }
+            if (Ball.resolveCollision(botBall, b)) {
+                b.setHitCredit(HitCredit.BOT);
+            }
     	}
     }
 
     public synchronized void kickPlayerBall(Direction direction) {
         var velocity = direction.getVector().mul(VELOCITY_FACTOR);
         playerBall.kick(velocity);
+    }
 
-    }
-    
-    public synchronized List<Ball> getBalls(){
-    	return balls;
-    }
-    
-    public synchronized Ball getPlayerBall() {
-    	return playerBall;
+    public synchronized void kickBotBall() {
+        var angle = random.nextDouble() * Math.PI * 2;
+        var v = new V2d(Math.cos(angle), Math.sin(angle)).mul(1.5);
+        botBall.kick(v);
     }
     
     public synchronized Boundary getBounds(){
-        return bounds;
+        return this.bounds;
     }
 
     public synchronized BoardViewInfo getBoardViewInfo() {
         var player = new BallViewInfo(playerBall.getPos(), playerBall.getRadius());
+        var bot = new BallViewInfo(botBall.getPos(), botBall.getRadius());
         var ballList = new ArrayList<BallViewInfo>();
         for (var ball: balls) {
             ballList.add(new BallViewInfo(ball.getPos(), ball.getRadius()));
@@ -89,6 +99,6 @@ public class Board {
         for (var hole: holes) {
             holeList.add(new HoleViewInfo(hole.pos(), hole.radius()));
         }
-        return new BoardViewInfo(player, ballList, holeList, playerScore, botScore);
+        return new BoardViewInfo(player, bot, ballList, holeList, playerScore, botScore);
     }
 }
