@@ -76,6 +76,7 @@ public class Board {
                 b.setHitCredit(HitCredit.BOT);
             }
     	}
+        Ball.resolveCollision(playerBall, botBall);
     }
 
     public synchronized void kickPlayerBall(Direction direction) {
