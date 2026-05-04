@@ -84,9 +84,28 @@ public class Board {
     }
 
     public synchronized void kickBotBall() {
-        var angle = random.nextDouble() * Math.PI * 2;
+        var botPos = botBall.getPos();
+        double angle;
+        int attempts = 0;
+        do {
+            angle = random.nextDouble() * Math.PI * 2;
+            attempts++;
+        } while (attempts < 20 && isAngleDangerous(angle, botPos));
         var v = new V2d(Math.cos(angle), Math.sin(angle)).mul(1.5);
         botBall.kick(v);
+    }
+
+    private boolean isAngleDangerous(double angle, P2d botPos) {
+        for (var hole : holes) {
+            double dx = hole.pos().x() - botPos.x();
+            double dy = hole.pos().y() - botPos.y();
+            double dist = Math.hypot(dx, dy);
+            double toHole = Math.atan2(dy, dx); // [-π, π]
+            double diff = ((angle - toHole + Math.PI) % (2 * Math.PI)) - Math.PI;
+            double dangerHalfAngle = Math.min(Math.PI * 0.6, 0.5 / dist);
+            if (Math.abs(diff) < dangerHalfAngle) return true;
+        }
+        return false;
     }
     
     public synchronized Boundary getBounds(){
