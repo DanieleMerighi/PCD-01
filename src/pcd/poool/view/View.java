@@ -26,7 +26,17 @@ public class View implements BoardObserver {
 
 	@Override
 	public void modelUpdated(BoardViewInfo boardViewInfo, int framePerSec) {
-		this.viewModel.update(boardViewInfo, framePerSec);
-		this.frame.render();
+		SwingUtilities.invokeLater(() -> {
+			this.viewModel.update(boardViewInfo, framePerSec);
+			this.frame.render();
+		});
+	}
+
+	@Override
+	public void gameOver(String result) {
+		SwingUtilities.invokeLater(() -> {
+			this.viewModel.setGameOver(result);
+			this.frame.render();
+		});
 	}
 }

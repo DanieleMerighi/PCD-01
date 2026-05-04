@@ -19,6 +19,8 @@ public class Board {
     private int playerScore;
     private int botScore;
     private final Random random;
+    private volatile boolean gameOver = false;
+    private String gameResult = "";
 
     public Board(BoardConf conf){
         balls = conf.getSmallBalls();
@@ -38,12 +40,14 @@ public class Board {
     	}
         for (var hole: holes) {
             if (playerBall.resolveHole(hole)) {
-                System.out.println("Player died");
-                System.exit(1);
+                gameOver = true;
+                gameResult = "Bot wins! Player fell in a hole.";
+                return;
             }
             if (botBall.resolveHole(hole)) {
-                System.out.println("Bot died");
-                System.exit(2);
+                gameOver = true;
+                gameResult = "Player wins! Bot fell in a hole.";
+                return;
             }
             for (var b: List.copyOf(balls)) {
                 if (b.resolveHole(hole)) {
@@ -52,13 +56,14 @@ public class Board {
                         case PLAYER -> playerScore++;
                     }
                     balls.remove(b);
-                    System.out.println("removed ballll. Balls: " + balls.size());
                 }
             }
         }
         if (balls.isEmpty()) {
-            System.out.println("Balll ended!");
-            System.exit(-1);
+            gameOver = true;
+            gameResult = playerScore > botScore ? "Player wins! " + playerScore + " - " + botScore
+                       : botScore > playerScore ? "Bot wins! " + botScore + " - " + playerScore
+                       : "Draw! " + playerScore + " - " + botScore;
         }
     	for (int i = 0; i < balls.size() - 1; i++) {
             for (int j = i + 1; j < balls.size(); j++) {
@@ -107,7 +112,15 @@ public class Board {
         }
         return false;
     }
-    
+
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
+    public synchronized String getGameResult() {
+        return gameResult;
+    }
+
     public synchronized Boundary getBounds(){
         return this.bounds;
     }

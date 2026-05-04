@@ -6,6 +6,7 @@ public class ViewModel {
 
 	private BoardViewInfo boardViewInfo;
 	private int framePerSec;
+	private String gameOverMessage = null;
 
 	public ViewModel(BoardViewInfo boardViewInfo) {
 		framePerSec = 0;
@@ -44,5 +45,13 @@ public class ViewModel {
 	synchronized int getBotScore() {
 		return boardViewInfo.botScore();
 	}
-	
+
+	public synchronized void setGameOver(String message) {
+		this.gameOverMessage = message;
+	}
+
+	public synchronized String getGameOverMessage() {
+		return gameOverMessage;
+	}
+
 }
