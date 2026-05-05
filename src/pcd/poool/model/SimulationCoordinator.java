@@ -1,16 +1,24 @@
 package pcd.poool.model;
 
+import pcd.poool.util.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class AutonomousUpdater extends Thread {
+public class SimulationCoordinator extends Thread {
 
 	private final Board board;
 	private final List<BoardObserver> observers;
+	private final WorkBuffer workBuffer;
 	
-	public AutonomousUpdater(Board board, List<BoardObserver> observers) {
+	public SimulationCoordinator(
+			Board board,
+			List<BoardObserver> observers,
+			WorkBuffer workBuffer
+	) {
 		this.board = board;
 		this.observers = new ArrayList<>(observers);
+		this.workBuffer = workBuffer;
 	}
 
 	@Override
@@ -21,7 +29,7 @@ public class AutonomousUpdater extends Thread {
 		while (!board.isGameOver()) {
 			long elapsed = System.currentTimeMillis() - lastUpdateTime;
 			lastUpdateTime = System.currentTimeMillis();
-			board.updateState(elapsed);
+			board.updateState(elapsed, workBuffer);
 
 			nFrames++;
 			long framePerSec = 0;

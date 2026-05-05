@@ -4,6 +4,7 @@ import pcd.poool.controller.ActiveController;
 import pcd.poool.controller.Cmd;
 import pcd.poool.model.*;
 import pcd.poool.util.BoundedBufferImpl;
+import pcd.poool.util.WorkBufferImpl;
 import pcd.poool.view.ViewModel;
 import pcd.poool.view.View;
 
@@ -26,7 +27,16 @@ public class Poool {
         var viewModel = new ViewModel(board.getBoardViewInfo());
         var view = new View(viewModel, cmdBuffer, 1200, 800);
 
-        var updater = new AutonomousUpdater(board, List.of(view));
+
+        var workBuffer = new WorkBufferImpl(10);
+        var updater = new SimulationCoordinator(board, List.of(view), workBuffer);
+
+        int nWorker = 1; // Runtime.getRuntime().availableProcessors() + 1;
+        for (int i = 0; i < nWorker; i++) {
+            var worker = new SimulationWorker(board, workBuffer);
+            worker.start();
+        }
+
         var botUpdater = new BotUpdater(board);
 
         updater.start();

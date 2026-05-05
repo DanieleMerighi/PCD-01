@@ -1,5 +1,6 @@
 package pcd.poool.model;
 
+import pcd.poool.util.WorkBuffer;
 import pcd.poool.view.BallViewInfo;
 import pcd.poool.view.BoardViewInfo;
 import pcd.poool.view.HoleViewInfo;
@@ -31,57 +32,46 @@ public class Board {
         random = new Random(System.currentTimeMillis());
     }
     
-    public synchronized void updateState(long dt) {
-    	playerBall.updateState(dt, this);
-        botBall.updateState(dt, this);
-    	
-    	for (var b: balls) {
-    		b.updateState(dt, this);
+    public synchronized void updateState(
+            long dt,
+            WorkBuffer workBuffer
+    ) {
+        workBuffer.put(() -> playerBall.updateState(dt, this));
+        workBuffer.put(() -> botBall.updateState(dt, this));
+        for (var b: balls) {
+            workBuffer.put(() -> b.updateState(dt, this));
     	}
+        workBuffer.waitAll();
+
         for (var hole: holes) {
-            if (playerBall.resolveHole(hole)) {
-                gameOver = true;
-                gameResult = "Bot wins! Player fell in a hole.";
-                return;
-            }
-            if (botBall.resolveHole(hole)) {
-                gameOver = true;
-                gameResult = "Player wins! Bot fell in a hole.";
-                return;
-            }
+            workBuffer.put(() -> Ball.resolveHole(playerBall, hole, this));
+            workBuffer.put(() -> Ball.resolveHole(botBall, hole, this));
             for (var b: List.copyOf(balls)) {
-                if (b.resolveHole(hole)) {
-                    switch (b.getHitCredit()){
-                        case BOT -> botScore++;
-                        case PLAYER -> playerScore++;
-                    }
-                    balls.remove(b);
-                }
+                workBuffer.put(() -> Ball.resolveHole(b, hole, this));
             }
         }
+        workBuffer.waitAll();
+
         if (balls.isEmpty()) {
             gameOver = true;
             gameResult = playerScore > botScore ? "Player wins! " + playerScore + " - " + botScore
                        : botScore > playerScore ? "Bot wins! " + botScore + " - " + playerScore
                        : "Draw! " + playerScore + " - " + botScore;
         }
-    	for (int i = 0; i < balls.size() - 1; i++) {
+
+        for (int i = 0; i < balls.size() - 1; i++) {
             for (int j = i + 1; j < balls.size(); j++) {
-                if (Ball.resolveCollision(balls.get(i), balls.get(j))) {
-                    balls.get(i).setHitCredit(HitCredit.NONE);
-                    balls.get(j).setHitCredit(HitCredit.NONE);
-                }
+                var a = balls.get(i);
+                var b = balls.get(j);
+                workBuffer.put(() -> Ball.resolveCollision(a, b));
             }
         }
     	for (var b: balls) {
-    		if (Ball.resolveCollision(playerBall, b)) {
-                b.setHitCredit(HitCredit.PLAYER);
-            }
-            if (Ball.resolveCollision(botBall, b)) {
-                b.setHitCredit(HitCredit.BOT);
-            }
+            workBuffer.put(() -> Ball.resolveCollision(playerBall, b));
+            workBuffer.put(() -> Ball.resolveCollision(botBall, b));
     	}
-        Ball.resolveCollision(playerBall, botBall);
+        workBuffer.put(() -> Ball.resolveCollision(playerBall, botBall));
+        workBuffer.waitAll();
     }
 
     public synchronized void kickPlayerBall(Direction direction) {
@@ -114,12 +104,29 @@ public class Board {
         return false;
     }
 
+    public synchronized void removeBall(Ball ball) {
+        balls.remove(ball);
+    }
+
+    public synchronized void addBotScore() {
+        botScore++;
+    }
+
+    public synchronized void addPlayerScore() {
+        playerScore++;
+    }
+
     public synchronized boolean isGameOver() {
         return gameOver;
     }
 
     public synchronized String getGameResult() {
         return gameResult;
+    }
+
+    public synchronized void endGame(String result) {
+        gameOver = true;
+        gameResult = result;
     }
 
     public synchronized Boundary getBounds(){
@@ -130,11 +137,11 @@ public class Board {
         var player = new BallViewInfo(playerBall.getPos(), playerBall.getRadius());
         var bot = new BallViewInfo(botBall.getPos(), botBall.getRadius());
         var ballList = new ArrayList<BallViewInfo>();
-        for (var ball: balls) {
+        for (var ball : balls) {
             ballList.add(new BallViewInfo(ball.getPos(), ball.getRadius()));
         }
         var holeList = new ArrayList<HoleViewInfo>();
-        for (var hole: holes) {
+        for (var hole : holes) {
             holeList.add(new HoleViewInfo(hole.pos(), hole.radius()));
         }
         return new BoardViewInfo(player, bot, ballList, holeList, playerScore, botScore);
