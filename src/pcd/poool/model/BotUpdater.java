@@ -13,7 +13,7 @@ public class BotUpdater extends Thread {
 	@Override
 	public void run() {
 		var random = new Random(System.currentTimeMillis());
-		while (true) {
+		while (!board.isGameOver()) {
 			try {
 				Thread.sleep(random.nextLong(400, 1000));
 				board.kickBotBall();

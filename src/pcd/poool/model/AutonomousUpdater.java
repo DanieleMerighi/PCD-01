@@ -13,17 +13,17 @@ public class AutonomousUpdater extends Thread {
 		this.observers = new ArrayList<>(observers);
 	}
 
+	private static final long TARGET_FRAME_MS = 16; // ~60fps
+
 	@Override
 	public void run() {
 		int nFrames = 0;
 		long t0 = System.currentTimeMillis();
 		long lastUpdateTime = System.currentTimeMillis();
-		while (true) {
+		while (!board.isGameOver()) {
 			long elapsed = System.currentTimeMillis() - lastUpdateTime;
 			lastUpdateTime = System.currentTimeMillis();
 			board.updateState(elapsed);
-
-			/* render */
 
 			nFrames++;
 			int framePerSec = 0;
@@ -32,6 +32,15 @@ public class AutonomousUpdater extends Thread {
 				framePerSec = (int)(nFrames*1000/dt);
 			}
 			notifyObservers(framePerSec);
+
+			long frameTime = System.currentTimeMillis() - lastUpdateTime;
+			long sleepTime = TARGET_FRAME_MS - frameTime;
+			if (sleepTime > 0) {
+				try { Thread.sleep(sleepTime); } catch (InterruptedException ignored) {}
+			}
+		}
+		for (var o : observers) {
+			o.gameOver(board.getGameResult());
 		}
 	}
 

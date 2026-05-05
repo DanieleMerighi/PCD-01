@@ -16,10 +16,8 @@ public class ActiveController extends Thread {
 	@Override
 	public void run() {
 		log("started.");
-		while (true) {
-			//log("Waiting for cmds ");
+		while (!board.isGameOver()) {
 			var cmd = cmdBuffer.get();
-			//log("new cmd fetched: " + cmd);
 			cmd.execute(board);
 		}
 	}

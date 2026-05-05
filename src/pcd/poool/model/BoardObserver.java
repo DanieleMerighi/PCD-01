@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface BoardObserver {
     void modelUpdated(BoardViewInfo boardViewInfo, int framePerSec);
+    void gameOver(String result);
 }

@@ -130,6 +130,22 @@ public class ViewFrame extends JFrame implements KeyListener {
 			x0 = (int)(1.7 * ox);
 			y0 = (int)(1.4 * oy);
 			g2.drawString(botScore, x0, y0);
+
+			String gameOverMsg = viewModel.getGameOverMessage();
+			if (gameOverMsg != null) {
+				g2.setColor(new Color(0, 0, 0, 170));
+				g2.fillRect(0, 0, getWidth(), getHeight());
+
+				g2.setColor(Color.WHITE);
+				g2.setFont(new Font("Arial", Font.BOLD, 72));
+				FontMetrics fm = g2.getFontMetrics();
+				String title = "GAME OVER";
+				g2.drawString(title, (getWidth() - fm.stringWidth(title)) / 2, oy - 20);
+
+				g2.setFont(new Font("Arial", Font.PLAIN, 32));
+				fm = g2.getFontMetrics();
+				g2.drawString(gameOverMsg, (getWidth() - fm.stringWidth(gameOverMsg)) / 2, oy + 40);
+			}
 		}
 
 	}
