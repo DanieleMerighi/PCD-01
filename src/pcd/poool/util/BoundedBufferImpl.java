@@ -19,6 +19,7 @@ public class BoundedBufferImpl<Item> implements BoundedBuffer<Item> {
 		maxSize = size;
 	}
 
+	@Override
 	public synchronized void put(Item item) {
 		while (isFull()) {
 			try {
@@ -29,6 +30,7 @@ public class BoundedBufferImpl<Item> implements BoundedBuffer<Item> {
 		notifyAll();
 	}
 
+	@Override
 	public synchronized Item get() {
 		while (isEmpty()) {
 			try {
