@@ -13,11 +13,9 @@ public class AutonomousUpdater extends Thread {
 		this.observers = new ArrayList<>(observers);
 	}
 
-	private static final long TARGET_FRAME_MS = 16; // ~60fps
-
 	@Override
 	public void run() {
-		int nFrames = 0;
+		long nFrames = 0;
 		long t0 = System.currentTimeMillis();
 		long lastUpdateTime = System.currentTimeMillis();
 		while (!board.isGameOver()) {
@@ -26,25 +24,19 @@ public class AutonomousUpdater extends Thread {
 			board.updateState(elapsed);
 
 			nFrames++;
-			int framePerSec = 0;
+			long framePerSec = 0;
 			long dt = (System.currentTimeMillis() - t0);
 			if (dt > 0) {
-				framePerSec = (int)(nFrames*1000/dt);
+				framePerSec = nFrames*1000/dt;
 			}
 			notifyObservers(framePerSec);
-
-			long frameTime = System.currentTimeMillis() - lastUpdateTime;
-			long sleepTime = TARGET_FRAME_MS - frameTime;
-			if (sleepTime > 0) {
-				try { Thread.sleep(sleepTime); } catch (InterruptedException ignored) {}
-			}
 		}
 		for (var o : observers) {
 			o.gameOver(board.getGameResult());
 		}
 	}
 
-	private void notifyObservers(int framePerSec) {
+	private void notifyObservers(long framePerSec) {
 		for (var o: observers) {
 			o.modelUpdated(board.getBoardViewInfo(), framePerSec);
 		}

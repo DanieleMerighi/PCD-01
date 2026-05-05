@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class ViewModel {
 
 	private BoardViewInfo boardViewInfo;
-	private int framePerSec;
+	private long framePerSec;
 	private String gameOverMessage = null;
 
 	public ViewModel(BoardViewInfo boardViewInfo) {
@@ -13,7 +13,7 @@ public class ViewModel {
 		this.boardViewInfo = boardViewInfo;
 	}
 	
-	public synchronized void update(BoardViewInfo boardViewInfo, int framePerSec) {
+	public synchronized void update(BoardViewInfo boardViewInfo, long framePerSec) {
 		this.boardViewInfo = boardViewInfo;
 		this.framePerSec = framePerSec;
 	}
@@ -22,7 +22,7 @@ public class ViewModel {
 		return new ArrayList<>(boardViewInfo.balls());
 	}
 
-	public synchronized int getFramePerSec() {
+	public synchronized long getFramePerSec() {
 		return framePerSec;
 	}
 

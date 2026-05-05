@@ -13,7 +13,8 @@ public class View implements BoardObserver {
 
 	private final ViewFrame frame;
 	private final ViewModel viewModel;
-
+	private long lastUpdateTime = System.currentTimeMillis();
+	private static final int MIN_REPAINT_INTERVAL = 10;
 
 	public View(ViewModel model, BoundedBuffer<Cmd> cmdBuffer, int w, int h) {
 		this.frame = new ViewFrame(model, cmdBuffer, w, h);
@@ -25,18 +26,20 @@ public class View implements BoardObserver {
 	}
 
 	@Override
-	public void modelUpdated(BoardViewInfo boardViewInfo, int framePerSec) {
-		SwingUtilities.invokeLater(() -> {
+	public void modelUpdated(BoardViewInfo boardViewInfo, long framePerSec) {
+		long elapsed = System.currentTimeMillis() - lastUpdateTime;
+
+		if (elapsed > MIN_REPAINT_INTERVAL) {
 			this.viewModel.update(boardViewInfo, framePerSec);
-			this.frame.render();
-		});
+			SwingUtilities.invokeLater(this.frame::render);
+			lastUpdateTime = System.currentTimeMillis();
+		}
+
 	}
 
 	@Override
 	public void gameOver(String result) {
-		SwingUtilities.invokeLater(() -> {
-			this.viewModel.setGameOver(result);
-			this.frame.render();
-		});
+		this.viewModel.setGameOver(result);
+		SwingUtilities.invokeLater(this.frame::render);
 	}
 }

@@ -19,7 +19,7 @@ public class Board {
     private int playerScore;
     private int botScore;
     private final Random random;
-    private volatile boolean gameOver = false;
+    private boolean gameOver = false;
     private String gameResult = "";
 
     public Board(BoardConf conf){
@@ -81,6 +81,7 @@ public class Board {
                 b.setHitCredit(HitCredit.BOT);
             }
     	}
+        Ball.resolveCollision(playerBall, botBall);
     }
 
     public synchronized void kickPlayerBall(Direction direction) {
@@ -113,7 +114,7 @@ public class Board {
         return false;
     }
 
-    public boolean isGameOver() {
+    public synchronized boolean isGameOver() {
         return gameOver;
     }
 
