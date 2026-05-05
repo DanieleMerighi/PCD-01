@@ -75,6 +75,7 @@ public class SimulationCoordinator extends Thread {
 					: botScore > playerScore ? "Bot wins! " + botScore + " - " + playerScore
 					: "Draw! " + playerScore + " - " + botScore;
 			gameState.endGame(gameResult);
+			return;
 		}
 
 		for (int i = 0; i < balls.size() - 1; i++) {

@@ -6,4 +6,6 @@ public interface WorkBuffer extends BoundedBuffer<Runnable> {
 
 	void waitAll();
 
+	void clearAll();
+
 }

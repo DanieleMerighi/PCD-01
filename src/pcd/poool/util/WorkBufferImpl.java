@@ -29,4 +29,11 @@ public class WorkBufferImpl extends BoundedBufferImpl<Runnable> implements WorkB
 		}
 	}
 
+	@Override
+	public synchronized void clearAll() {
+		if (pendingCounter != 0) {
+			pendingCounter = 0;
+			notifyAll();
+		}
+	}
 }

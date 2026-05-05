@@ -20,6 +20,7 @@ public class SimulationWorker extends Thread {
 			work.run();
 			workBuffer.done();
 		}
+		workBuffer.clearAll();
 	}
 
 	private void log(String msg) {
