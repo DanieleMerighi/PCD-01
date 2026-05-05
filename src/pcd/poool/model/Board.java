@@ -1,6 +1,5 @@
 package pcd.poool.model;
 
-import pcd.poool.util.WorkBuffer;
 import pcd.poool.view.BallViewInfo;
 import pcd.poool.view.BoardViewInfo;
 import pcd.poool.view.HoleViewInfo;
@@ -31,47 +30,21 @@ public class Board {
         holes = conf.getHoles();
         random = new Random(System.currentTimeMillis());
     }
-    
-    public synchronized void updateState(
-            long dt,
-            WorkBuffer workBuffer
-    ) {
-        workBuffer.put(() -> playerBall.updateState(dt, this));
-        workBuffer.put(() -> botBall.updateState(dt, this));
-        for (var b: balls) {
-            workBuffer.put(() -> b.updateState(dt, this));
-    	}
-        workBuffer.waitAll();
 
-        for (var hole: holes) {
-            workBuffer.put(() -> Ball.resolveHole(playerBall, hole, this));
-            workBuffer.put(() -> Ball.resolveHole(botBall, hole, this));
-            for (var b: List.copyOf(balls)) {
-                workBuffer.put(() -> Ball.resolveHole(b, hole, this));
-            }
-        }
-        workBuffer.waitAll();
+    public synchronized Ball getPlayerBall() {
+        return playerBall;
+    }
 
-        if (balls.isEmpty()) {
-            gameOver = true;
-            gameResult = playerScore > botScore ? "Player wins! " + playerScore + " - " + botScore
-                       : botScore > playerScore ? "Bot wins! " + botScore + " - " + playerScore
-                       : "Draw! " + playerScore + " - " + botScore;
-        }
+    public synchronized Ball getBotBall() {
+        return botBall;
+    }
 
-        for (int i = 0; i < balls.size() - 1; i++) {
-            for (int j = i + 1; j < balls.size(); j++) {
-                var a = balls.get(i);
-                var b = balls.get(j);
-                workBuffer.put(() -> Ball.resolveCollision(a, b));
-            }
-        }
-    	for (var b: balls) {
-            workBuffer.put(() -> Ball.resolveCollision(playerBall, b));
-            workBuffer.put(() -> Ball.resolveCollision(botBall, b));
-    	}
-        workBuffer.put(() -> Ball.resolveCollision(playerBall, botBall));
-        workBuffer.waitAll();
+    public synchronized List<Ball> getBalls() {
+        return new ArrayList<>(balls);
+    }
+
+    public synchronized List<Hole> getHoles() {
+        return new ArrayList<>(holes);
     }
 
     public synchronized void kickPlayerBall(Direction direction) {
