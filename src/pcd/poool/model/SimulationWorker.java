@@ -4,18 +4,18 @@ import pcd.poool.util.WorkBuffer;
 
 public class SimulationWorker extends Thread {
 
-	private final Board board;
+	private final GameState gameState;
 	private final WorkBuffer workBuffer;
 
-	public SimulationWorker(Board board, WorkBuffer workBuffer) {
-		this.board = board;
+	public SimulationWorker(GameState gameState, WorkBuffer workBuffer) {
+		this.gameState = gameState;
 		this.workBuffer = workBuffer;
 	}
 
 	@Override
 	public void run() {
 		log("started.");
-		while (!board.isGameOver()) {
+		while (!gameState.isGameOver()) {
 			var work = workBuffer.get();
 			work.run();
 			workBuffer.done();

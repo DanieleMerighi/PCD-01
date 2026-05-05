@@ -18,25 +18,26 @@ public class Poool {
         var boardConf = new MassiveBoardConf();
 
         Board board = new Board(boardConf);
+        GameState gameState = new GameState();
 
         var cmdBuffer = new BoundedBufferImpl<Cmd>(100);
 
-        var controller = new ActiveController(board, cmdBuffer);
+        var controller = new ActiveController(board, gameState, cmdBuffer);
         controller.start();
 
-        var viewModel = new ViewModel(board.getBoardViewInfo());
+        var viewModel = new ViewModel(board.getBoardViewInfo(), gameState.getGameStateViewInfo());
         var view = new View(viewModel, cmdBuffer, 1200, 800);
 
         var workBuffer = new WorkBufferImpl(10000);
-        var updater = new SimulationCoordinator(board, List.of(view), workBuffer);
+        var updater = new SimulationCoordinator(board, gameState, List.of(view), workBuffer);
 
         int nWorker = Runtime.getRuntime().availableProcessors() + 1;
         for (int i = 0; i < nWorker; i++) {
-            var worker = new SimulationWorker(board, workBuffer);
+            var worker = new SimulationWorker(gameState, workBuffer);
             worker.start();
         }
 
-        var botUpdater = new BotUpdater(board);
+        var botUpdater = new BotUpdater(board, gameState);
 
         updater.start();
         botUpdater.start();

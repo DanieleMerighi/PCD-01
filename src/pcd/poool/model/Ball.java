@@ -137,17 +137,17 @@ public class Ball {
         }
     }
 
-    public static void resolveHole(Ball ball, Hole hole, Board board) {
+    public static void resolveHole(Ball ball, Hole hole, Board board, GameState gameState) {
         var dx = ball.getPos().x() - hole.pos().x();
         var dy = ball.getPos().y() - hole.pos().y();
         if (Math.hypot(dx, dy) < hole.radius()) {
 			switch (ball.getRole()) {
-				case PLAYER -> board.endGame("Bot wins! Player fell in a hole.");
-				case BOT -> board.endGame("Player wins! Bot fell in a hole.");
+				case PLAYER -> gameState.endGame("Bot wins! Player fell in a hole.");
+				case BOT -> gameState.endGame("Player wins! Bot fell in a hole.");
 				case NONE -> {
 					switch (ball.getHitCredit()){
-						case BOT -> board.addBotScore();
-						case PLAYER -> board.addPlayerScore();
+						case BOT -> gameState.addBotScore();
+						case PLAYER -> gameState.addPlayerScore();
 					}
 					board.removeBall(ball);
 				}

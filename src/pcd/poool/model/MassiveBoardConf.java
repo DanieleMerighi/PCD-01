@@ -7,12 +7,12 @@ public class MassiveBoardConf implements BoardConf {
 
 	@Override
 	public Ball getPlayerBall() {
-		return  new Ball(new P2d(-0.6, -0.75), 0.05, 1.5, new V2d(0,0));
+		return  new Ball(new P2d(-0.6, -0.75), 0.05, 1.5, new V2d(0,0), HitCredit.PLAYER);
 	}
 
 	@Override
 	public Ball getBotBall() {
-		return  new Ball(new P2d(0.6, -0.75), 0.05, 1.5, new V2d(0,0));
+		return  new Ball(new P2d(0.6, -0.75), 0.05, 1.5, new V2d(0,0), HitCredit.BOT);
 	}
 
 	@Override

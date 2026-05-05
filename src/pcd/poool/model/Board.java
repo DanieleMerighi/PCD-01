@@ -16,11 +16,7 @@ public class Board {
     private final Ball botBall;
     private final Boundary bounds;
     private final List<Hole> holes;
-    private int playerScore;
-    private int botScore;
     private final Random random;
-    private boolean gameOver = false;
-    private String gameResult = "";
 
     public Board(BoardConf conf){
         balls = conf.getSmallBalls();
@@ -81,28 +77,7 @@ public class Board {
         balls.remove(ball);
     }
 
-    public synchronized void addBotScore() {
-        botScore++;
-    }
-
-    public synchronized void addPlayerScore() {
-        playerScore++;
-    }
-
-    public synchronized boolean isGameOver() {
-        return gameOver;
-    }
-
-    public synchronized String getGameResult() {
-        return gameResult;
-    }
-
-    public synchronized void endGame(String result) {
-        gameOver = true;
-        gameResult = result;
-    }
-
-    public synchronized Boundary getBounds(){
+    public Boundary getBounds(){
         return this.bounds;
     }
 
@@ -117,6 +92,6 @@ public class Board {
         for (var hole : holes) {
             holeList.add(new HoleViewInfo(hole.pos(), hole.radius()));
         }
-        return new BoardViewInfo(player, bot, ballList, holeList, playerScore, botScore);
+        return new BoardViewInfo(player, bot, ballList, holeList);
     }
 }

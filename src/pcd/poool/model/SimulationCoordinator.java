@@ -8,15 +8,18 @@ import java.util.List;
 public class SimulationCoordinator extends Thread {
 
 	private final Board board;
+	private final GameState gameState;
 	private final List<BoardObserver> observers;
 	private final WorkBuffer workBuffer;
 	
 	public SimulationCoordinator(
 			Board board,
+			GameState gameState,
 			List<BoardObserver> observers,
 			WorkBuffer workBuffer
 	) {
 		this.board = board;
+		this.gameState = gameState;
 		this.observers = new ArrayList<>(observers);
 		this.workBuffer = workBuffer;
 	}
@@ -26,7 +29,7 @@ public class SimulationCoordinator extends Thread {
 		long nFrames = 0;
 		long t0 = System.currentTimeMillis();
 		long lastUpdateTime = System.currentTimeMillis();
-		while (!board.isGameOver()) {
+		while (!gameState.isGameOver()) {
 			long elapsed = System.currentTimeMillis() - lastUpdateTime;
 			lastUpdateTime = System.currentTimeMillis();
 			this.updateState(elapsed);
@@ -40,7 +43,7 @@ public class SimulationCoordinator extends Thread {
 			notifyObservers(framePerSec);
 		}
 		for (var o : observers) {
-			o.gameOver(board.getGameResult());
+			o.gameOver(gameState.getGameResult());
 		}
 	}
 
@@ -56,24 +59,24 @@ public class SimulationCoordinator extends Thread {
 		workBuffer.waitAll();
 
 		for (var hole : board.getHoles()) {
-			workBuffer.put(() -> Ball.resolveHole(playerBall, hole, board));
-			workBuffer.put(() -> Ball.resolveHole(botBall, hole, board));
+			workBuffer.put(() -> Ball.resolveHole(playerBall, hole, board, gameState));
+			workBuffer.put(() -> Ball.resolveHole(botBall, hole, board, gameState));
 			for (var b : board.getBalls()) {
-				workBuffer.put(() -> Ball.resolveHole(b, hole, board));
+				workBuffer.put(() -> Ball.resolveHole(b, hole, board, gameState));
 			}
 		}
 		workBuffer.waitAll();
 
-		/*
+		var balls = board.getBalls();
 		if (balls.isEmpty()) {
-			gameOver = true;
-			gameResult = playerScore > botScore ? "Player wins! " + playerScore + " - " + botScore
+			int playerScore = gameState.getPlayerScore();
+			int botScore = gameState.getBotScore();
+			String gameResult = playerScore > botScore ? "Player wins! " + playerScore + " - " + botScore
 					: botScore > playerScore ? "Bot wins! " + botScore + " - " + playerScore
 					: "Draw! " + playerScore + " - " + botScore;
+			gameState.endGame(gameResult);
 		}
-	 	*/
 
-		var balls = board.getBalls();
 		for (int i = 0; i < balls.size() - 1; i++) {
 			int finalI = i;
 			workBuffer.put(() -> {
@@ -92,7 +95,7 @@ public class SimulationCoordinator extends Thread {
 
 	private void notifyObservers(long framePerSec) {
 		for (var o: observers) {
-			o.modelUpdated(board.getBoardViewInfo(), framePerSec);
+			o.modelUpdated(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), framePerSec);
 		}
 	}
 }
