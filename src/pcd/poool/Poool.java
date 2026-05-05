@@ -14,8 +14,8 @@ public class Poool {
     public static void main(String[] argv) {
 
         // var boardConf = new MinimalBoardConf();
-        var boardConf = new LargeBoardConf();
-        // var boardConf = new MassiveBoardConf();
+        // var boardConf = new LargeBoardConf();
+        var boardConf = new MassiveBoardConf();
 
         Board board = new Board(boardConf);
 
@@ -27,11 +27,10 @@ public class Poool {
         var viewModel = new ViewModel(board.getBoardViewInfo());
         var view = new View(viewModel, cmdBuffer, 1200, 800);
 
-
-        var workBuffer = new WorkBufferImpl(10);
+        var workBuffer = new WorkBufferImpl(10000);
         var updater = new SimulationCoordinator(board, List.of(view), workBuffer);
 
-        int nWorker = 1; // Runtime.getRuntime().availableProcessors() + 1;
+        int nWorker = Runtime.getRuntime().availableProcessors() + 1;
         for (int i = 0; i < nWorker; i++) {
             var worker = new SimulationWorker(board, workBuffer);
             worker.start();
