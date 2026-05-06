@@ -28,10 +28,10 @@ public class Poool {
         var viewModel = new ViewModel(board.getBoardViewInfo(), gameState.getGameStateViewInfo());
         var view = new View(viewModel, cmdBuffer, 1200, 800);
 
-        var workBuffer = new WorkBufferImpl(10000);
-        var updater = new SimulationCoordinator(board, gameState, List.of(view), workBuffer);
-
         int nWorker = Runtime.getRuntime().availableProcessors() + 1;
+        var workBuffer = new WorkBufferImpl(10000);
+        var updater = new SimulationCoordinator(board, gameState, List.of(view), workBuffer, nWorker);
+
         for (int i = 0; i < nWorker; i++) {
             var worker = new SimulationWorker(gameState, workBuffer);
             worker.start();

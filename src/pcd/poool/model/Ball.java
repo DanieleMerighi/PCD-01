@@ -149,7 +149,7 @@ public class Ball {
 						case BOT -> gameState.addBotScore();
 						case PLAYER -> gameState.addPlayerScore();
 					}
-					board.removeBall(ball);
+					board.removeSmallBall(ball);
 				}
 			}
 		}

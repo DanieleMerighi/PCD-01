@@ -11,17 +11,21 @@ import java.util.Random;
 public class Board {
     public static final double VELOCITY_FACTOR = 1.5;
 
-    private final List<Ball> balls;
+    private final List<Ball> smallBalls;
     private final Ball playerBall;
     private final Ball botBall;
+    private final List<Ball> allBalls;
     private final Boundary bounds;
     private final List<Hole> holes;
     private final Random random;
 
     public Board(BoardConf conf){
-        balls = conf.getSmallBalls();
         playerBall = conf.getPlayerBall();
         botBall = conf.getBotBall();
+        allBalls = new ArrayList<>();
+        allBalls.addAll(List.of(playerBall, botBall));
+        allBalls.addAll(conf.getSmallBalls());
+        smallBalls = allBalls.subList(2, allBalls.size());
         bounds = conf.getBoardBoundary();
         holes = conf.getHoles();
         random = new Random(System.currentTimeMillis());
@@ -35,8 +39,12 @@ public class Board {
         return botBall;
     }
 
-    public synchronized List<Ball> getBalls() {
-        return new ArrayList<>(balls);
+    public synchronized List<Ball> getSmallBalls() {
+        return new ArrayList<>(smallBalls);
+    }
+
+    public synchronized List<Ball> getAllBalls() {
+        return new ArrayList<>(allBalls);
     }
 
     public synchronized List<Hole> getHoles() {
@@ -73,8 +81,12 @@ public class Board {
         return false;
     }
 
-    public synchronized void removeBall(Ball ball) {
-        balls.remove(ball);
+    public synchronized void removeSmallBall(Ball ball) {
+        System.out.println("allBall: " + allBalls.size());
+        System.out.println("smallBall: " + smallBalls.size());
+        smallBalls.remove(ball);
+        System.out.println("allBall: " + allBalls.size());
+        System.out.println("smallBall: " + smallBalls.size());
     }
 
     public Boundary getBounds(){
@@ -85,7 +97,7 @@ public class Board {
         var player = new BallViewInfo(playerBall.getPos(), playerBall.getRadius());
         var bot = new BallViewInfo(botBall.getPos(), botBall.getRadius());
         var ballList = new ArrayList<BallViewInfo>();
-        for (var ball : balls) {
+        for (var ball : smallBalls) {
             ballList.add(new BallViewInfo(ball.getPos(), ball.getRadius()));
         }
         var holeList = new ArrayList<HoleViewInfo>();

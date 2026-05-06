@@ -4,6 +4,7 @@ import pcd.poool.util.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class SimulationCoordinator extends Thread {
 
@@ -11,17 +12,20 @@ public class SimulationCoordinator extends Thread {
 	private final GameState gameState;
 	private final List<BoardObserver> observers;
 	private final WorkBuffer workBuffer;
+	private final int nWorker;
 	
 	public SimulationCoordinator(
 			Board board,
 			GameState gameState,
 			List<BoardObserver> observers,
-			WorkBuffer workBuffer
+			WorkBuffer workBuffer,
+			int nWorker
 	) {
 		this.board = board;
 		this.gameState = gameState;
 		this.observers = new ArrayList<>(observers);
 		this.workBuffer = workBuffer;
+		this.nWorker = nWorker;
 	}
 
 	@Override
@@ -29,10 +33,23 @@ public class SimulationCoordinator extends Thread {
 		long nFrames = 0;
 		long t0 = System.currentTimeMillis();
 		long lastUpdateTime = System.currentTimeMillis();
+		var times = new ArrayList<Long>();
+		int laps = 0;
 		while (!gameState.isGameOver()) {
 			long elapsed = System.currentTimeMillis() - lastUpdateTime;
 			lastUpdateTime = System.currentTimeMillis();
+
+			long cronometroStart = System.currentTimeMillis();
 			this.updateState(elapsed);
+			long elapsedTime = System.currentTimeMillis() - cronometroStart;
+			times.add(elapsedTime);
+			if (laps % 100 == 0) {
+				double mean = times.stream()
+						.mapToDouble(d -> d)
+						.average()
+						.orElse(0.0);
+				System.out.println("[Lap "+ laps + "]" + mean);
+			}
 
 			nFrames++;
 			long framePerSec = 0;
@@ -41,6 +58,7 @@ public class SimulationCoordinator extends Thread {
 				framePerSec = nFrames*1000/dt;
 			}
 			notifyObservers(framePerSec);
+			laps++;
 		}
 		for (var o : observers) {
 			o.gameOver(gameState.getGameResult());
@@ -48,36 +66,20 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	private void updateState(long dt) {
-		var playerBall = board.getPlayerBall();
-		var botBall = board.getBotBall();
-
-		workBuffer.put(() -> playerBall.updateState(dt, board));
-		workBuffer.put(() -> botBall.updateState(dt, board));
-		for (var b : board.getBalls()) {
-			workBuffer.put(() -> b.updateState(dt, board));
-		}
+		distributeWork(ball -> ball.updateState(dt, board));
 		workBuffer.waitAll();
 
 		for (var hole : board.getHoles()) {
-			workBuffer.put(() -> Ball.resolveHole(playerBall, hole, board, gameState));
-			workBuffer.put(() -> Ball.resolveHole(botBall, hole, board, gameState));
-			for (var b : board.getBalls()) {
-				workBuffer.put(() -> Ball.resolveHole(b, hole, board, gameState));
-			}
+			distributeWork(ball -> Ball.resolveHole(ball, hole, board, gameState));
 		}
 		workBuffer.waitAll();
 
-		var balls = board.getBalls();
-		if (balls.isEmpty()) {
-			int playerScore = gameState.getPlayerScore();
-			int botScore = gameState.getBotScore();
-			String gameResult = playerScore > botScore ? "Player wins! " + playerScore + " - " + botScore
-					: botScore > playerScore ? "Bot wins! " + botScore + " - " + playerScore
-					: "Draw! " + playerScore + " - " + botScore;
-			gameState.endGame(gameResult);
+		if (isGameEnded()) {
+			setEndGame();
 			return;
 		}
 
+		var balls = board.getAllBalls();
 		for (int i = 0; i < balls.size() - 1; i++) {
 			int finalI = i;
 			workBuffer.put(() -> {
@@ -86,12 +88,42 @@ public class SimulationCoordinator extends Thread {
 				}
 			});
 		}
-		for (var b: balls) {
-			workBuffer.put(() -> Ball.resolveCollision(playerBall, b));
-			workBuffer.put(() -> Ball.resolveCollision(botBall, b));
-		}
-		workBuffer.put(() -> Ball.resolveCollision(playerBall, botBall));
 		workBuffer.waitAll();
+	}
+
+	public void distributeWork(Consumer<Ball> action) {
+		var allBalls = board.getAllBalls();
+		int totalSize = allBalls.size();
+		if (totalSize == 0 || nWorker <= 0) return;
+
+		int actualWorkers = Math.min(nWorker, totalSize);
+		int workAmount = totalSize / actualWorkers;
+
+		for (int i = 0; i < actualWorkers; i++) {
+			int start = i * workAmount;
+			// L'ultimo worker prende tutti gli elementi fino alla fine della lista,
+			// includendo il resto della divisione
+			int end = (i == actualWorkers - 1) ? totalSize : start + workAmount;
+			workBuffer.put(() -> {
+				for (int j = start; j < end; j++) {
+					action.accept(allBalls.get(j));
+				}
+			});
+		}
+	}
+
+	private boolean isGameEnded() {
+		var balls = board.getSmallBalls();
+        return balls.isEmpty();
+    }
+
+	private void setEndGame() {
+		int playerScore = gameState.getPlayerScore();
+		int botScore = gameState.getBotScore();
+		String gameResult = playerScore > botScore ? "Player wins! " + playerScore + " - " + botScore
+				: botScore > playerScore ? "Bot wins! " + botScore + " - " + playerScore
+				: "Draw! " + playerScore + " - " + botScore;
+		gameState.endGame(gameResult);
 	}
 
 	private void notifyObservers(long framePerSec) {
@@ -100,3 +132,60 @@ public class SimulationCoordinator extends Thread {
 		}
 	}
 }
+
+
+/*
+list.allBalls
+ 1  2   3  4 5  6   7  8  9
+    20 30 40 50 60 70 80 90  1  list.allBalls
+       31 41 51 61 71 81 91  2
+          42 52 62 72 82 92  3
+             5 6 7 8 9       4
+               6 7 8 9       5
+				 7 8 9       6
+				   8 9       7
+					 9       8
+							 9
+ */
+
+/*
+var balls = board.getAllBalls();
+		int low = 0;
+		int high = balls.size() - 1;
+		while (low <= high) {
+			int finalLow = low;
+			int finalHigh = high;
+			workBuffer.put(() -> {
+				for (int j = finalLow + 1; j < balls.size(); j++) {
+					Ball.resolveCollision(balls.get(finalLow), balls.get(j));
+				}
+				if (finalLow != finalHigh) {
+					for (int j = finalHigh + 1; j < balls.size(); j++) {
+						Ball.resolveCollision(balls.get(finalHigh), balls.get(j));
+					}
+				}
+			});
+			low++;
+			high--;
+		}
+ */
+
+/*
+var allBalls = board.getAllBalls();
+		var workAmount = allBalls.size() / nWorker;
+		var indexLeft = 0;
+		var indexRight = workAmount - 1;
+		for (int nw = 0; nw < nWorker; nw++) {
+			int finalIndexLeft = indexLeft;
+			int finalIndexRight = indexRight;
+			workBuffer.put(() -> {
+				for (int i = finalIndexLeft; i < finalIndexRight; i++) {
+					for (int j = i + 1; j < allBalls.size(); j++) {
+						Ball.resolveCollision(allBalls.get(i), allBalls.get(j));
+					}
+				}
+			});
+			indexLeft += workAmount;
+			indexRight += workAmount;
+		}
+ */
