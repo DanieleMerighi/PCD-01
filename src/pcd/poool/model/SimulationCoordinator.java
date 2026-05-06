@@ -74,17 +74,21 @@ public class SimulationCoordinator extends Thread {
 		}
 		workBuffer.waitAll();
 
-		if (isGameEnded()) {
+		if (gameState.isGameOver())
+			return;
+
+		var balls = board.getSmallBalls();
+		if (balls.isEmpty()) {
 			setEndGame();
 			return;
 		}
 
-		var balls = board.getAllBalls();
-		for (int i = 0; i < balls.size() - 1; i++) {
+		var allBalls = board.getAllBalls();
+		for (int i = 0; i < allBalls.size() - 1; i++) {
 			int finalI = i;
 			workBuffer.put(() -> {
-				for (int j = finalI + 1; j < balls.size(); j++) {
-					Ball.resolveCollision(balls.get(finalI), balls.get(j));
+				for (int j = finalI + 1; j < allBalls.size(); j++) {
+					Ball.resolveCollision(allBalls.get(finalI), allBalls.get(j));
 				}
 			});
 		}
@@ -111,11 +115,6 @@ public class SimulationCoordinator extends Thread {
 			});
 		}
 	}
-
-	private boolean isGameEnded() {
-		var balls = board.getSmallBalls();
-        return balls.isEmpty();
-    }
 
 	private void setEndGame() {
 		int playerScore = gameState.getPlayerScore();

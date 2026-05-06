@@ -82,11 +82,7 @@ public class Board {
     }
 
     public synchronized void removeSmallBall(Ball ball) {
-        System.out.println("allBall: " + allBalls.size());
-        System.out.println("smallBall: " + smallBalls.size());
         smallBalls.remove(ball);
-        System.out.println("allBall: " + allBalls.size());
-        System.out.println("smallBall: " + smallBalls.size());
     }
 
     public Boundary getBounds(){
