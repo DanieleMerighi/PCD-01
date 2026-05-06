@@ -6,23 +6,23 @@ public class Ball {
     private V2d vel;
     private final double radius;
     private final double mass;
-	private final HitCredit role;
-    private HitCredit hitCredit;
+	private final Entity role;
+    private Entity hitCredit;
     
     private static final double FRICTION_FACTOR = 0.25; 	/* 0 minimum */
     private static final double RESTITUTION_FACTOR = 1;
 
-    public Ball(P2d pos, double radius, double mass, V2d vel, HitCredit role){
+    public Ball(P2d pos, double radius, double mass, V2d vel, Entity role){
        this.pos = pos;
        this.radius = radius;
        this.mass = mass;
        this.vel = vel;
 	   this.role = role;
-       this.hitCredit = HitCredit.NONE;
+       this.hitCredit = Entity.SMALL_BALL;
     }
 
 	public Ball(P2d pos, double radius, double mass, V2d vel){
-		this(pos, radius, mass, vel, HitCredit.NONE);
+		this(pos, radius, mass, vel, Entity.SMALL_BALL);
 	}
 
     public synchronized void updateState(long dt, Board ctx){
@@ -144,7 +144,7 @@ public class Ball {
 			switch (ball.getRole()) {
 				case PLAYER -> gameState.endGame("Bot wins! Player fell in a hole.");
 				case BOT -> gameState.endGame("Player wins! Bot fell in a hole.");
-				case NONE -> {
+				case SMALL_BALL -> {
 					switch (ball.getHitCredit()){
 						case BOT -> gameState.addBotScore();
 						case PLAYER -> gameState.addPlayerScore();
@@ -179,15 +179,15 @@ public class Ball {
     	return radius;
     }
 
-	public synchronized HitCredit getRole() {
+	public synchronized Entity getRole() {
 		return role;
 	}
 
-    public synchronized HitCredit getHitCredit() {
+    public synchronized Entity getHitCredit() {
         return this.hitCredit;
     }
 
-    public synchronized void setHitCredit(HitCredit hitCredit) {
+    public synchronized void setHitCredit(Entity hitCredit) {
         this.hitCredit = hitCredit;
     }
 

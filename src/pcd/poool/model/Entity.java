@@ -1,7 +1,7 @@
 package pcd.poool.model;
 
-public enum HitCredit {
+public enum Entity {
     PLAYER,
     BOT,
-    NONE
+    SMALL_BALL
 }
