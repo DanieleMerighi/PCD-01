@@ -2,7 +2,6 @@ package pcd.poool.model;
 
 import pcd.poool.util.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -29,35 +28,22 @@ public class SimulationCoordinator extends Thread {
 
 	@Override
 	public void run() {
-		long nFrames = 0;
+		long nTicks = 0;
 		long t0 = System.currentTimeMillis();
 		long lastUpdateTime = System.currentTimeMillis();
-		var times = new ArrayList<Long>();
-		int laps = 0;
 		while (!gameState.isGameOver()) {
 			long elapsed = System.currentTimeMillis() - lastUpdateTime;
 			lastUpdateTime = System.currentTimeMillis();
 
-			long cronometroStart = System.currentTimeMillis();
 			this.updateState(elapsed);
-			long elapsedTime = System.currentTimeMillis() - cronometroStart;
-			times.add(elapsedTime);
-			if (laps % 100 == 0) {
-				double mean = times.stream()
-						.mapToDouble(d -> d)
-						.average()
-						.orElse(0.0);
-				System.out.println("[Lap "+ laps + "]" + mean);
-			}
 
-			nFrames++;
+			nTicks++;
 			long tickPerSec = 0;
 			long dt = (System.currentTimeMillis() - t0);
 			if (dt > 0) {
-				tickPerSec = nFrames*1000/dt;
+				tickPerSec = nTicks*1000/dt;
 			}
 			notifyObservers(tickPerSec);
-			laps++;
 		}
 		for (var o : observers) {
 			o.gameOver(gameState.getGameResult());
