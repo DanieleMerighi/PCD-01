@@ -6,7 +6,7 @@ public interface BoardConf {
 
 	Boundary getBoardBoundary();
 	
-	Ball getPlayerBall();
+	Ball getHumanBall();
 
 	Ball getBotBall();
 	

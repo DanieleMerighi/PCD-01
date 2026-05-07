@@ -141,12 +141,12 @@ public class Ball {
         var dy = ball.getPos().y() - hole.pos().y();
         if (Math.hypot(dx, dy) < hole.radius()) {
 			switch (ball.getType()) {
-				case PLAYER -> gameState.endGame("Bot wins! Player fell in a hole.");
-				case BOT -> gameState.endGame("Player wins! Bot fell in a hole.");
+				case HUMAN -> gameState.endGame("Bot wins! Human fell in a hole.");
+				case BOT -> gameState.endGame("Human wins! Bot fell in a hole.");
 				case SMALL_BALL -> {
 					switch (ball.getHitCredit()){
 						case BOT -> gameState.addBotScore();
-						case PLAYER -> gameState.addPlayerScore();
+						case HUMAN -> gameState.addHumanScore();
 					}
 					gameState.removeSmallBall(ball);
 				}

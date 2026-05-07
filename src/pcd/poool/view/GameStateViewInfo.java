@@ -4,6 +4,6 @@ import java.util.List;
 
 public record GameStateViewInfo(
 		List<BallViewInfo> balls,
-		int playerScore,
+		int humanScore,
 		int botScore
 ) {}

@@ -13,7 +13,7 @@ public class ArrowKeyCmd implements Cmd {
 
     @Override
     public void execute(Board board) {
-        board.kickPlayerBall(direction);
+        board.kickHumanBall(direction);
     }
 
 }

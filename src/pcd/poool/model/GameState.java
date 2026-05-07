@@ -10,14 +10,14 @@ public class GameState {
 
     private final List<Ball> smallBalls;
     private final List<Ball> allBalls;
-    private int playerScore;
+    private int humanScore;
     private int botScore;
     private boolean gameOver = false;
     private String gameResult = "";
 
-    public GameState(Ball playerBall, Ball botBall, List<Ball> smallBalls) {
+    public GameState(Ball humanBall, Ball botBall, List<Ball> smallBalls) {
         allBalls = new ArrayList<>();
-        allBalls.addAll(List.of(playerBall, botBall));
+        allBalls.addAll(List.of(humanBall, botBall));
         allBalls.addAll(smallBalls);
         this.smallBalls = allBalls.subList(2, allBalls.size()); // Dynamic view
     }
@@ -34,16 +34,16 @@ public class GameState {
         smallBalls.remove(ball);
     }
 
-    public synchronized int getPlayerScore() {
-        return playerScore;
+    public synchronized int getHumanScore() {
+        return humanScore;
     }
 
     public synchronized int getBotScore() {
         return botScore;
     }
 
-    public synchronized void addPlayerScore() {
-        playerScore++;
+    public synchronized void addHumanScore() {
+        humanScore++;
     }
 
     public synchronized void addBotScore() {
@@ -68,6 +68,7 @@ public class GameState {
         for (var ball : smallBalls) {
             balls.add(new BallViewInfo(ball.getPos(), ball.getRadius()));
         }
-        return new GameStateViewInfo(balls, playerScore, botScore);
+        return new GameStateViewInfo(balls, humanScore, botScore);
     }
+
 }

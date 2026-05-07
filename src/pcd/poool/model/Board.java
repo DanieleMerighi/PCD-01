@@ -14,23 +14,23 @@ public class Board {
 
     private final Boundary bounds;
     private final List<Hole> holes;
-    private final Ball playerBall;
+    private final Ball humanBall;
     private final Ball botBall;
     private final GameState state;
     private final Random random;
 
-    public Board(BoardConf conf){
-        playerBall = conf.getPlayerBall();
+    public Board(BoardConf conf) {
+        humanBall = conf.getHumanBall();
         botBall = conf.getBotBall();
-        state = new GameState(playerBall, botBall, conf.getSmallBalls());
+        state = new GameState(humanBall, botBall, conf.getSmallBalls());
         bounds = conf.getBoardBoundary();
         holes = conf.getHoles();
         random = new Random(System.currentTimeMillis());
     }
 
-    public void kickPlayerBall(Direction direction) {
+    public void kickHumanBall(Direction direction) {
         var velocity = direction.getVector().mul(KICK_SPEED);
-        playerBall.kick(velocity);
+        humanBall.kick(velocity);
     }
 
     public void kickBotBall() {
@@ -71,12 +71,12 @@ public class Board {
     }
 
     public BoardViewInfo getBoardViewInfo() {
-        var player = new BallViewInfo(playerBall.getPos(), playerBall.getRadius());
-        var bot = new BallViewInfo(botBall.getPos(), botBall.getRadius());
+        var humanBall = new BallViewInfo(this.humanBall.getPos(), this.humanBall.getRadius());
+        var botBall = new BallViewInfo(this.botBall.getPos(), this.botBall.getRadius());
         var holes = new ArrayList<HoleViewInfo>();
         for (var hole : this.holes) {
             holes.add(new HoleViewInfo(hole.pos(), hole.radius()));
         }
-        return new BoardViewInfo(player, bot, holes);
+        return new BoardViewInfo(humanBall, botBall, holes);
     }
 }

@@ -51,12 +51,12 @@ public class SimulationCoordinator extends Thread {
 			}
 
 			nFrames++;
-			long framePerSec = 0;
+			long tickPerSec = 0;
 			long dt = (System.currentTimeMillis() - t0);
 			if (dt > 0) {
-				framePerSec = nFrames*1000/dt;
+				tickPerSec = nFrames*1000/dt;
 			}
-			notifyObservers(framePerSec);
+			notifyObservers(tickPerSec);
 			laps++;
 		}
 		for (var o : observers) {
@@ -116,17 +116,17 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	private void setEndGame() {
-		int playerScore = gameState.getPlayerScore();
+		int humanScore = gameState.getHumanScore();
 		int botScore = gameState.getBotScore();
-		String gameResult = playerScore > botScore ? "Player wins! " + playerScore + " - " + botScore
-				: botScore > playerScore ? "Bot wins! " + botScore + " - " + playerScore
-				: "Draw! " + playerScore + " - " + botScore;
+		String gameResult = humanScore > botScore ? "Human wins! " + humanScore + " - " + botScore
+				: botScore > humanScore ? "Bot wins! " + botScore + " - " + humanScore
+				: "Draw! " + humanScore + " - " + botScore;
 		gameState.endGame(gameResult);
 	}
 
-	private void notifyObservers(long framePerSec) {
+	private void notifyObservers(long tickPerSec) {
 		for (var o: observers) {
-			o.modelUpdated(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), framePerSec);
+			o.modelUpdated(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec);
 		}
 	}
 

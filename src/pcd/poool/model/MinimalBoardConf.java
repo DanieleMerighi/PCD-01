@@ -6,8 +6,8 @@ import java.util.List;
 public class MinimalBoardConf implements BoardConf {
 
 	@Override
-	public Ball getPlayerBall() {
-    	return new Ball(new P2d(-0.6, 0), 0.06, 1, new V2d(0,0.5), BallType.PLAYER);
+	public Ball getHumanBall() {
+    	return new Ball(new P2d(-0.6, 0), 0.06, 1, new V2d(0,0.5), BallType.HUMAN);
 	}
 
 	@Override
