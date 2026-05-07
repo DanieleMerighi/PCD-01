@@ -26,4 +26,5 @@ public class SimulationWorker extends Thread {
 	private void log(String msg) {
 		System.out.println("[ " + System.currentTimeMillis() + "][ Worker-" + getName() + " ] " + msg);
 	}
+
 }

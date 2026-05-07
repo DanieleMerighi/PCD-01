@@ -22,7 +22,7 @@ public class ViewModel {
 	}
 
 	synchronized ArrayList<BallViewInfo> getBalls(){
-		return new ArrayList<>(boardViewInfo.balls());
+		return new ArrayList<>(gameStateViewInfo.balls());
 	}
 
 	public synchronized long getFramePerSec() {

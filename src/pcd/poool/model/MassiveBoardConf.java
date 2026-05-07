@@ -7,12 +7,12 @@ public class MassiveBoardConf implements BoardConf {
 
 	@Override
 	public Ball getPlayerBall() {
-		return  new Ball(new P2d(-0.6, -0.75), 0.05, 1.5, new V2d(0,0), Entity.PLAYER);
+		return  new Ball(new P2d(-0.6, -0.75), 0.05, 1.5, new V2d(0,0), BallType.PLAYER);
 	}
 
 	@Override
 	public Ball getBotBall() {
-		return  new Ball(new P2d(0.6, -0.75), 0.05, 1.5, new V2d(0,0), Entity.BOT);
+		return  new Ball(new P2d(0.6, -0.75), 0.05, 1.5, new V2d(0,0), BallType.BOT);
 	}
 
 	@Override
@@ -42,4 +42,5 @@ public class MassiveBoardConf implements BoardConf {
 		return List.of(new Hole(new P2d(-1.5, 1.0), radius),
 				new Hole(new P2d(1.5, 1.0), radius));
 	}
+
 }

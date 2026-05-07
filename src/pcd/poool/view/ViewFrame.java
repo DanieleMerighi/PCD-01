@@ -18,7 +18,7 @@ public class ViewFrame extends JFrame implements KeyListener {
 	private final ViewModel viewModel;
 	private final BoundedBuffer<Cmd> cmdBuffer;
 
-	public ViewFrame(ViewModel viewModel, BoundedBuffer<Cmd> cmdBuffer, int w, int h){
+	public ViewFrame(ViewModel viewModel, BoundedBuffer<Cmd> cmdBuffer, int w, int h) {
 		this.viewModel = viewModel;
 		this.cmdBuffer = cmdBuffer;
 		setTitle("Poool");
@@ -32,17 +32,17 @@ public class ViewFrame extends JFrame implements KeyListener {
 		setFocusTraversalKeysEnabled(false);
 		requestFocusInWindow();
 
-		addWindowListener(new WindowAdapter(){
-			public void windowClosing(WindowEvent ev){
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent ev) {
 				System.exit(-1);
 			}
-			public void windowClosed(WindowEvent ev){
+			public void windowClosed(WindowEvent ev) {
 				System.exit(-1);
 			}
 		});
 	}
 
-	public void render(){
+	public void render() {
 		panel.repaint();
 	}
 
@@ -51,14 +51,14 @@ public class ViewFrame extends JFrame implements KeyListener {
 		private final int oy;
 		private final int delta;
 
-		public VisualiserPanel(int w, int h){
+		public VisualiserPanel(int w, int h) {
 			setPreferredSize(new Dimension(w,h));
 			ox = w/2;
 			oy = h/2;
 			delta = Math.min(ox, oy);
 		}
 
-		public void paint(Graphics g){
+		public void paint(Graphics g) {
 			Graphics2D g2 = (Graphics2D) g;
 
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -168,7 +168,6 @@ public class ViewFrame extends JFrame implements KeyListener {
 	}
 
 	@Override
-	public void keyReleased(KeyEvent e) {
-		
-	}
+	public void keyReleased(KeyEvent e) {}
+
 }

@@ -1,4 +1,9 @@
 package pcd.poool.view;
 
-public record GameStateViewInfo(int playerScore, int botScore) {
-}
+import java.util.List;
+
+public record GameStateViewInfo(
+		List<BallViewInfo> balls,
+		int playerScore,
+		int botScore
+) {}

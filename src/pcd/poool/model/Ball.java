@@ -1,31 +1,31 @@
 package pcd.poool.model;
 
 public class Ball {
-    
+
+	private static final double FRICTION_FACTOR = 0.25; 	/* 0 minimum */
+	private static final double RESTITUTION_FACTOR = 1;
+
     private P2d pos;
     private V2d vel;
     private final double radius;
     private final double mass;
-	private final Entity role;
-    private Entity hitCredit;
-    
-    private static final double FRICTION_FACTOR = 0.25; 	/* 0 minimum */
-    private static final double RESTITUTION_FACTOR = 1;
+	private final BallType type;
+    private BallType hitCredit;
 
-    public Ball(P2d pos, double radius, double mass, V2d vel, Entity role){
+    public Ball(P2d pos, double radius, double mass, V2d vel, BallType type) {
        this.pos = pos;
        this.radius = radius;
        this.mass = mass;
        this.vel = vel;
-	   this.role = role;
-       this.hitCredit = Entity.SMALL_BALL;
+	   this.type = type;
+       this.hitCredit = BallType.SMALL_BALL;
     }
 
-	public Ball(P2d pos, double radius, double mass, V2d vel){
-		this(pos, radius, mass, vel, Entity.SMALL_BALL);
+	public Ball(P2d pos, double radius, double mass, V2d vel) {
+		this(pos, radius, mass, vel, BallType.SMALL_BALL);
 	}
 
-    public synchronized void updateState(long dt, Board ctx){
+    public synchronized void updateState(long dt, Board ctx) {
         double speed = vel.abs();
         double dt_scaled = dt*0.001;
     	if (speed > 0.001) {
@@ -46,18 +46,18 @@ public class Ball {
     /**
      * Keep the ball inside the boundaries, updating the velocity in the case of bounces
      */
-    private void applyBoundaryConstraints(Board ctx){
+    private void applyBoundaryConstraints(Board ctx) {
         Boundary bounds = ctx.getBounds();
-        if (pos.x() + radius > bounds.x1()){
+        if (pos.x() + radius > bounds.x1()) {
             pos = new P2d(bounds.x1() - radius, pos.y());
             vel = vel.getSwappedX();
-        } else if (pos.x() - radius < bounds.x0()){
+        } else if (pos.x() - radius < bounds.x0()) {
             pos = new P2d(bounds.x0() + radius, pos.y());
             vel = vel.getSwappedX();
-        } else if (pos.y() + radius > bounds.y1()){
+        } else if (pos.y() + radius > bounds.y1()) {
             pos = new P2d(pos.x(), bounds.y1() - radius);
             vel = vel.getSwappedY();
-        } else if (pos.y() - radius < bounds.y0()){
+        } else if (pos.y() - radius < bounds.y0()) {
             pos = new P2d(pos.x(), bounds.y0() + radius);
             vel = vel.getSwappedY();
         }
@@ -81,7 +81,7 @@ public class Ball {
          * There is a collision if the distance between the two balls is less than the sum of the radii 
          * 
          */
-        if (dist < minD && dist > 1e-6)  {
+        if (dist < minD && dist > 1e-6) {
 
 	        /* 
 	         * Collision case - what to do:
@@ -126,22 +126,21 @@ public class Ball {
 	        double dvn = dvx * nx + dvy * ny;
 	
 	        if (dvn <= 0) { /* if not already separating, update velocities */
-	        	
 	        	double imp = -(1 + RESTITUTION_FACTOR) * dvn / (1.0/a.getMass() + 1.0/b.getMass());        
 	        	a.setVel(new V2d(a.getVel().x() - (imp / a.getMass()) * nx, a.getVel().y() - (imp / a.getMass()) * ny));
 	        	b.setVel(new V2d(b.getVel().x() + (imp / b.getMass()) * nx, b.getVel().y() + (imp / b.getMass()) * ny));
 	        }
 
-			a.setHitCredit(b.getRole());
-			b.setHitCredit(a.getRole());
+			a.setHitCredit(b.getType());
+			b.setHitCredit(a.getType());
         }
     }
 
-    public static void resolveHole(Ball ball, Hole hole, Board board, GameState gameState) {
+    public static void resolveHole(Ball ball, Hole hole, GameState gameState) {
         var dx = ball.getPos().x() - hole.pos().x();
         var dy = ball.getPos().y() - hole.pos().y();
         if (Math.hypot(dx, dy) < hole.radius()) {
-			switch (ball.getRole()) {
+			switch (ball.getType()) {
 				case PLAYER -> gameState.endGame("Bot wins! Player fell in a hole.");
 				case BOT -> gameState.endGame("Player wins! Bot fell in a hole.");
 				case SMALL_BALL -> {
@@ -149,17 +148,17 @@ public class Ball {
 						case BOT -> gameState.addBotScore();
 						case PLAYER -> gameState.addPlayerScore();
 					}
-					board.removeSmallBall(ball);
+					gameState.removeSmallBall(ball);
 				}
 			}
 		}
     }
     
-    public synchronized P2d getPos(){
+    public synchronized P2d getPos() {
     	return pos;
     }
 
-	public synchronized void setPos(P2d pos){
+	public synchronized void setPos(P2d pos) {
 		this.pos = pos;
 	}
     
@@ -171,7 +170,7 @@ public class Ball {
     	return vel;
     }
 
-	public synchronized void setVel(V2d vel){
+	public synchronized void setVel(V2d vel) {
 		this.vel = vel;
 	}
     
@@ -179,15 +178,15 @@ public class Ball {
     	return radius;
     }
 
-	public synchronized Entity getRole() {
-		return role;
+	public synchronized BallType getType() {
+		return type;
 	}
 
-    public synchronized Entity getHitCredit() {
+    public synchronized BallType getHitCredit() {
         return this.hitCredit;
     }
 
-    public synchronized void setHitCredit(Entity hitCredit) {
+    public synchronized void setHitCredit(BallType hitCredit) {
         this.hitCredit = hitCredit;
     }
 

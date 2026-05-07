@@ -1,6 +1,6 @@
 package pcd.poool;
 
-import pcd.poool.controller.ActiveController;
+import pcd.poool.controller.KeyboardController;
 import pcd.poool.controller.Cmd;
 import pcd.poool.model.*;
 import pcd.poool.util.BoundedBufferImpl;
@@ -17,12 +17,12 @@ public class Poool {
         // var boardConf = new LargeBoardConf();
         var boardConf = new MassiveBoardConf();
 
-        Board board = new Board(boardConf);
-        GameState gameState = new GameState();
+        var board = new Board(boardConf);
+        var gameState = board.getState();
 
         var cmdBuffer = new BoundedBufferImpl<Cmd>(100);
 
-        var controller = new ActiveController(board, gameState, cmdBuffer);
+        var controller = new KeyboardController(board, cmdBuffer);
         controller.start();
 
         var viewModel = new ViewModel(board.getBoardViewInfo(), gameState.getGameStateViewInfo());
@@ -30,18 +30,17 @@ public class Poool {
 
         int nWorker = Runtime.getRuntime().availableProcessors() + 1;
         var workBuffer = new WorkBufferImpl(10000);
-        var updater = new SimulationCoordinator(board, gameState, List.of(view), workBuffer, nWorker);
+        var updater = new SimulationCoordinator(board, List.of(view), workBuffer, nWorker);
 
         for (int i = 0; i < nWorker; i++) {
             var worker = new SimulationWorker(gameState, workBuffer);
             worker.start();
         }
 
-        var botUpdater = new BotUpdater(board, gameState);
+        var botUpdater = new BotUpdater(board);
 
         updater.start();
         botUpdater.start();
-
 
         view.display();
     }

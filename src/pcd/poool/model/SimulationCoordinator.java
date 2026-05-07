@@ -16,14 +16,13 @@ public class SimulationCoordinator extends Thread {
 	
 	public SimulationCoordinator(
 			Board board,
-			GameState gameState,
 			List<BoardObserver> observers,
 			WorkBuffer workBuffer,
 			int nWorker
 	) {
 		this.board = board;
-		this.gameState = gameState;
-		this.observers = new ArrayList<>(observers);
+		this.gameState = board.getState();
+		this.observers = List.copyOf(observers);
 		this.workBuffer = workBuffer;
 		this.nWorker = nWorker;
 	}
@@ -70,20 +69,20 @@ public class SimulationCoordinator extends Thread {
 		workBuffer.waitAll();
 
 		for (var hole : board.getHoles()) {
-			distributeWork(ball -> Ball.resolveHole(ball, hole, board, gameState));
+			distributeWork(ball -> Ball.resolveHole(ball, hole, gameState));
 		}
 		workBuffer.waitAll();
 
 		if (gameState.isGameOver())
 			return;
 
-		var balls = board.getSmallBalls();
+		var balls = gameState.getSmallBalls();
 		if (balls.isEmpty()) {
 			setEndGame();
 			return;
 		}
 
-		var allBalls = board.getAllBalls();
+		var allBalls = gameState.getAllBalls();
 		for (int i = 0; i < allBalls.size() - 1; i++) {
 			int finalI = i;
 			workBuffer.put(() -> {
@@ -96,7 +95,7 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	public void distributeWork(Consumer<Ball> action) {
-		var allBalls = board.getAllBalls();
+		var allBalls = gameState.getAllBalls();
 		int totalSize = allBalls.size();
 		if (totalSize == 0 || nWorker <= 0) return;
 
@@ -130,6 +129,7 @@ public class SimulationCoordinator extends Thread {
 			o.modelUpdated(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), framePerSec);
 		}
 	}
+
 }
 
 

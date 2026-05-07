@@ -1,6 +1,6 @@
 package pcd.poool.model;
 
-public enum Entity {
+public enum BallType {
     PLAYER,
     BOT,
     SMALL_BALL

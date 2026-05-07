@@ -1,13 +1,10 @@
 package pcd.poool.view;
 
 import pcd.poool.controller.Cmd;
-import pcd.poool.model.Ball;
 import pcd.poool.model.BoardObserver;
-import pcd.poool.model.Hole;
 import pcd.poool.util.BoundedBuffer;
 
 import javax.swing.*;
-import java.util.List;
 
 public class View implements BoardObserver {
 
@@ -42,4 +39,5 @@ public class View implements BoardObserver {
 		this.viewModel.setGameOver(result);
 		SwingUtilities.invokeLater(this.frame::render);
 	}
+
 }

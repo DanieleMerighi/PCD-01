@@ -1,6 +1,9 @@
 package pcd.poool.view;
 
-import java.util.ArrayList;
+import java.util.List;
 
-public record BoardViewInfo(BallViewInfo player, BallViewInfo bot, ArrayList<BallViewInfo> balls, ArrayList<HoleViewInfo> holes) {
-}
+public record BoardViewInfo(
+		BallViewInfo player,
+		BallViewInfo bot,
+		List<HoleViewInfo> holes
+) {}

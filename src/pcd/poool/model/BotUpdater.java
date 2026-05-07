@@ -7,9 +7,9 @@ public class BotUpdater extends Thread {
 	private final Board board;
 	private final GameState gameState;
 
-	public BotUpdater(Board board, GameState gameState) {
+	public BotUpdater(Board board) {
 		this.board = board;
-		this.gameState = gameState;
+		this.gameState = board.getState();
 	}
 
 	@Override
@@ -19,9 +19,8 @@ public class BotUpdater extends Thread {
 			try {
 				Thread.sleep(random.nextLong(400, 1000));
 				board.kickBotBall();
-			}
-			catch (InterruptedException ignored) {
-			}
+			} catch (InterruptedException ignored) {}
 		}
 	}
+
 }

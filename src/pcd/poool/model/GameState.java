@@ -1,13 +1,38 @@
 package pcd.poool.model;
 
+import pcd.poool.view.BallViewInfo;
 import pcd.poool.view.GameStateViewInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GameState {
 
+    private final List<Ball> smallBalls;
+    private final List<Ball> allBalls;
     private int playerScore;
     private int botScore;
     private boolean gameOver = false;
     private String gameResult = "";
+
+    public GameState(Ball playerBall, Ball botBall, List<Ball> smallBalls) {
+        allBalls = new ArrayList<>();
+        allBalls.addAll(List.of(playerBall, botBall));
+        allBalls.addAll(smallBalls);
+        this.smallBalls = allBalls.subList(2, allBalls.size()); // Dynamic view
+    }
+
+    public synchronized List<Ball> getSmallBalls() {
+        return List.copyOf(smallBalls);
+    }
+
+    public synchronized List<Ball> getAllBalls() {
+        return List.copyOf(allBalls);
+    }
+
+    public synchronized void removeSmallBall(Ball ball) {
+        smallBalls.remove(ball);
+    }
 
     public synchronized int getPlayerScore() {
         return playerScore;
@@ -39,6 +64,10 @@ public class GameState {
     }
 
     public synchronized GameStateViewInfo getGameStateViewInfo() {
-        return new GameStateViewInfo(playerScore, botScore);
+        var balls = new ArrayList<BallViewInfo>();
+        for (var ball : smallBalls) {
+            balls.add(new BallViewInfo(ball.getPos(), ball.getRadius()));
+        }
+        return new GameStateViewInfo(balls, playerScore, botScore);
     }
 }
