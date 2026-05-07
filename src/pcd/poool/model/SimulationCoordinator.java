@@ -68,9 +68,11 @@ public class SimulationCoordinator extends Thread {
 		distributeWork(ball -> ball.updateState(dt, board));
 		workBuffer.waitAll();
 
-		for (var hole : board.getHoles()) {
-			distributeWork(ball -> Ball.resolveHole(ball, hole, gameState));
-		}
+		distributeWork(ball -> {
+			for (var hole : board.getHoles()) {
+				Ball.resolveHole(ball, hole, gameState);
+			}
+		});
 		workBuffer.waitAll();
 
 		if (gameState.isGameOver())
