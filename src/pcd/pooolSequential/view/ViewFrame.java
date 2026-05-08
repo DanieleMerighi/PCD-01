@@ -18,7 +18,7 @@ public class ViewFrame extends JFrame implements KeyListener {
 	private final ViewModel viewModel;
 	private final BoundedBuffer<Cmd> cmdBuffer;
 
-	public ViewFrame(ViewModel viewModel, BoundedBuffer<Cmd> cmdBuffer, int w, int h){
+	public ViewFrame(ViewModel viewModel, BoundedBuffer<Cmd> cmdBuffer, int w, int h) {
 		this.viewModel = viewModel;
 		this.cmdBuffer = cmdBuffer;
 		setTitle("Poool");
@@ -32,17 +32,17 @@ public class ViewFrame extends JFrame implements KeyListener {
 		setFocusTraversalKeysEnabled(false);
 		requestFocusInWindow();
 
-		addWindowListener(new WindowAdapter(){
-			public void windowClosing(WindowEvent ev){
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent ev) {
 				System.exit(-1);
 			}
-			public void windowClosed(WindowEvent ev){
+			public void windowClosed(WindowEvent ev) {
 				System.exit(-1);
 			}
 		});
 	}
 
-	public void render(){
+	public void render() {
 		panel.repaint();
 	}
 
@@ -51,14 +51,14 @@ public class ViewFrame extends JFrame implements KeyListener {
 		private final int oy;
 		private final int delta;
 
-		public VisualiserPanel(int w, int h){
+		public VisualiserPanel(int w, int h) {
 			setPreferredSize(new Dimension(w,h));
 			ox = w/2;
 			oy = h/2;
 			delta = Math.min(ox, oy);
 		}
 
-		public void paint(Graphics g){
+		public void paint(Graphics g) {
 			Graphics2D g2 = (Graphics2D) g;
 
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -93,7 +93,7 @@ public class ViewFrame extends JFrame implements KeyListener {
 			}
 
 			g2.setStroke(new BasicStroke(3));
-			var pb = viewModel.getPlayerBall();
+			var pb = viewModel.getHumanBall();
 			if (pb != null) {
 				var p1 = pb.pos();
 				int x0 = (int)(ox + p1.x()*delta);
@@ -117,14 +117,14 @@ public class ViewFrame extends JFrame implements KeyListener {
 
 			g2.setStroke(new BasicStroke(1));
 			g2.drawString("Num small balls: " + viewModel.getBalls().size(), 20, 2 * oy - 60);
-			g2.drawString("Frame per sec: " + viewModel.getFramePerSec(), 20, 2 * oy - 40);
+			g2.drawString("Average tick per sec: " + viewModel.getTickPerSec(), 20, 2 * oy - 40);
 
 			g2.setColor(Color.BLUE);
-			String playerScore = String.valueOf(viewModel.getPlayerScore());
+			String humanScore = String.valueOf(viewModel.getHumanScore());
 			int x0 = (int)(0.2 * ox);
 			int y0 = (int)(1.4 * oy);
 			g2.setFont(new Font("Arial", Font.PLAIN, 90));
-			g2.drawString(playerScore, x0, y0);
+			g2.drawString(humanScore, x0, y0);
 
 			String botScore = String.valueOf(viewModel.getBotScore());
 			x0 = (int)(1.7 * ox);
@@ -168,7 +168,6 @@ public class ViewFrame extends JFrame implements KeyListener {
 	}
 
 	@Override
-	public void keyReleased(KeyEvent e) {
-		
-	}
+	public void keyReleased(KeyEvent e) {}
+
 }

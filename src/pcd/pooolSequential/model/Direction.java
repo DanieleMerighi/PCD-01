@@ -15,4 +15,5 @@ public enum Direction {
     public V2d getVector() {
         return vector;
     }
+
 }

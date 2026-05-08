@@ -4,6 +4,7 @@ import pcd.pooolSequential.model.Board;
 import pcd.pooolSequential.model.Direction;
 
 public class ArrowKeyCmd implements Cmd {
+
     private final Direction direction;
 
     public ArrowKeyCmd(Direction direction) {
@@ -12,6 +13,7 @@ public class ArrowKeyCmd implements Cmd {
 
     @Override
     public void execute(Board board) {
-        board.kickPlayerBall(direction);
+        board.kickHumanBall(direction);
     }
+
 }
