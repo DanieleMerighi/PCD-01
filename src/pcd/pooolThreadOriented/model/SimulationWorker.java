@@ -1,26 +1,22 @@
 package pcd.pooolThreadOriented.model;
 
-import pcd.pooolThreadOriented.util.WorkBuffer;
+import pcd.pooolThreadOriented.util.Latch;
 
 public class SimulationWorker extends Thread {
 
-	private final GameState gameState;
-	private final WorkBuffer workBuffer;
+	private final Latch latch;
+	private final Runnable work;
 
-	public SimulationWorker(GameState gameState, WorkBuffer workBuffer) {
-		this.gameState = gameState;
-		this.workBuffer = workBuffer;
+	public SimulationWorker(Latch latch, Runnable work) {
+		this.latch = latch;
+		this.work = work;
 	}
 
 	@Override
 	public void run() {
 		log("started.");
-		while (!gameState.isGameOver()) {
-			var work = workBuffer.get();
-			work.run();
-			workBuffer.done();
-		}
-		workBuffer.clearAll();
+		work.run();
+		latch.countDown();
 	}
 
 	private void log(String msg) {

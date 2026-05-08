@@ -10,19 +10,16 @@ public class SimulationCoordinator extends Thread {
 	private final Board board;
 	private final GameState gameState;
 	private final List<BoardObserver> observers;
-	private final WorkBuffer workBuffer;
 	private final int nWorker;
 	
 	public SimulationCoordinator(
 			Board board,
 			List<BoardObserver> observers,
-			WorkBuffer workBuffer,
 			int nWorker
 	) {
 		this.board = board;
 		this.gameState = board.getState();
 		this.observers = List.copyOf(observers);
-		this.workBuffer = workBuffer;
 		this.nWorker = nWorker;
 	}
 
@@ -52,14 +49,12 @@ public class SimulationCoordinator extends Thread {
 
 	private void updateState(long dt) {
 		distributeWork(ball -> ball.updateState(dt, board));
-		workBuffer.waitAll();
 
 		distributeWork(ball -> {
 			for (var hole : board.getHoles()) {
 				Ball.resolveHole(ball, hole, gameState);
 			}
 		});
-		workBuffer.waitAll();
 
 		if (gameState.isGameOver())
 			return;
@@ -71,15 +66,36 @@ public class SimulationCoordinator extends Thread {
 		}
 
 		var allBalls = gameState.getAllBalls();
-		for (int i = 0; i < allBalls.size() - 1; i++) {
+		int totalSize = allBalls.size();
+		if (totalSize == 0 || nWorker <= 0) return;
+
+		int actualWorkers = Math.min(nWorker, totalSize);
+		var latch = new LatchImpl(nWorker);
+
+		for (int i = 0; i < actualWorkers; i++) {
 			int finalI = i;
-			workBuffer.put(() -> {
-				for (int j = finalI + 1; j < allBalls.size(); j++) {
-					Ball.resolveCollision(allBalls.get(finalI), allBalls.get(j));
+			var worker = new SimulationWorker(latch, () -> {
+				for (int k = finalI; k < allBalls.size() - 1; k += actualWorkers) {
+					for (int j = k + 1; j < allBalls.size(); j++) {
+						Ball.resolveCollision(allBalls.get(k), allBalls.get(j));
+					}
 				}
 			});
+			worker.start();
 		}
-		workBuffer.waitAll();
+		latch.await();
+
+
+
+//		var allBalls = gameState.getAllBalls();
+//		for (int i = 0; i < allBalls.size() - 1; i++) {
+//			int finalI = i;
+//			workBuffer.put(() -> {
+//				for (int j = finalI + 1; j < allBalls.size(); j++) {
+//					Ball.resolveCollision(allBalls.get(finalI), allBalls.get(j));
+//				}
+//			});
+//		}
 	}
 
 	public void distributeWork(Consumer<Ball> action) {
@@ -90,17 +106,21 @@ public class SimulationCoordinator extends Thread {
 		int actualWorkers = Math.min(nWorker, totalSize);
 		int workAmount = totalSize / actualWorkers;
 
+		var latch = new LatchImpl(nWorker);
+
 		for (int i = 0; i < actualWorkers; i++) {
 			int start = i * workAmount;
 			// L'ultimo worker prende tutti gli elementi fino alla fine della lista,
 			// includendo il resto della divisione
 			int end = (i == actualWorkers - 1) ? totalSize : start + workAmount;
-			workBuffer.put(() -> {
+			var worker = new SimulationWorker(latch, () -> {
 				for (int j = start; j < end; j++) {
 					action.accept(allBalls.get(j));
 				}
 			});
+			worker.start();
 		}
+		latch.await();
 	}
 
 	private void setEndGame() {
