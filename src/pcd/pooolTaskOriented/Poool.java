@@ -8,7 +8,6 @@ import pcd.pooolTaskOriented.view.View;
 import pcd.pooolTaskOriented.view.ViewModel;
 
 import java.util.List;
-import java.util.concurrent.Executors;
 
 public class Poool {
     public static void main(String[] argv) {
@@ -29,8 +28,7 @@ public class Poool {
         var view = new View(viewModel, cmdBuffer, 1200, 800);
 
         int nWorker = Runtime.getRuntime().availableProcessors() + 1;
-        var exec = Executors.newFixedThreadPool(nWorker);
-        var updater = new SimulationCoordinator(board, List.of(view), exec, nWorker);
+        var updater = new SimulationCoordinator(board, List.of(view), nWorker);
 
         var botUpdater = new BotUpdater(board);
 

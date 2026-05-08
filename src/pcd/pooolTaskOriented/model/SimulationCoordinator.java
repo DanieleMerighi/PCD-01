@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public class SimulationCoordinator extends Thread {
@@ -19,13 +20,12 @@ public class SimulationCoordinator extends Thread {
 	public SimulationCoordinator(
 			Board board,
 			List<BoardObserver> observers,
-			ExecutorService exec,
 			int nWorker
 	) {
 		this.board = board;
 		this.gameState = board.getState();
 		this.observers = List.copyOf(observers);
-		this.exec = exec;
+		this.exec = Executors.newFixedThreadPool(nWorker);
 		this.nWorker = nWorker;
 	}
 
