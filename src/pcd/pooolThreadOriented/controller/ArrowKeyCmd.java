@@ -1,0 +1,19 @@
+package pcd.pooolThreadOriented.controller;
+
+import pcd.pooolThreadOriented.model.Board;
+import pcd.pooolThreadOriented.model.Direction;
+
+public class ArrowKeyCmd implements Cmd {
+
+    private final Direction direction;
+
+    public ArrowKeyCmd(Direction direction) {
+        this.direction = direction;
+    }
+
+    @Override
+    public void execute(Board board) {
+        board.kickHumanBall(direction);
+    }
+
+}

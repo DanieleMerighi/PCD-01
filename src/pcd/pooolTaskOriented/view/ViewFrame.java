@@ -1,0 +1,173 @@
+package pcd.pooolTaskOriented.view;
+
+import pcd.pooolTaskOriented.controller.ArrowKeyCmd;
+import pcd.pooolTaskOriented.controller.Cmd;
+import pcd.pooolTaskOriented.model.Direction;
+import pcd.pooolTaskOriented.util.BoundedBuffer;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
+public class ViewFrame extends JFrame implements KeyListener {
+
+	private final VisualiserPanel panel;
+	private final ViewModel viewModel;
+	private final BoundedBuffer<Cmd> cmdBuffer;
+
+	public ViewFrame(ViewModel viewModel, BoundedBuffer<Cmd> cmdBuffer, int w, int h) {
+		this.viewModel = viewModel;
+		this.cmdBuffer = cmdBuffer;
+		setTitle("Poool");
+		setResizable(false);
+		panel = new VisualiserPanel(w,h);
+		getContentPane().add(panel);
+		pack();
+
+		this.addKeyListener(this);
+		setFocusable(true);
+		setFocusTraversalKeysEnabled(false);
+		requestFocusInWindow();
+
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent ev) {
+				System.exit(-1);
+			}
+			public void windowClosed(WindowEvent ev) {
+				System.exit(-1);
+			}
+		});
+	}
+
+	public void render() {
+		panel.repaint();
+	}
+
+	public class VisualiserPanel extends JPanel {
+		private final int ox;
+		private final int oy;
+		private final int delta;
+
+		public VisualiserPanel(int w, int h) {
+			setPreferredSize(new Dimension(w,h));
+			ox = w/2;
+			oy = h/2;
+			delta = Math.min(ox, oy);
+		}
+
+		public void paint(Graphics g) {
+			Graphics2D g2 = (Graphics2D) g;
+
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setRenderingHint(RenderingHints.KEY_RENDERING,
+					RenderingHints.VALUE_RENDER_QUALITY);
+			g2.clearRect(0,0,this.getWidth(),this.getHeight());
+
+			g2.setColor(Color.LIGHT_GRAY);
+			g2.setStroke(new BasicStroke(1));
+			g2.drawLine(ox,0,ox,oy*2);
+			g2.drawLine(0,oy,ox*2,oy);
+			g2.setColor(Color.BLACK);
+
+			for (var hole: viewModel.getHoles()) {
+				var p = hole.pos();
+				int x0 = (int)(ox + p.x()*delta);
+				int y0 = (int)(oy - p.y()*delta);
+				int radiusX = (int)(hole.radius()*delta);
+				int radiusY = (int)(hole.radius()*delta);
+				g2.fillOval(x0 - radiusX,y0 - radiusY,radiusX * 2,radiusY * 2);
+			}
+
+			g2.setStroke(new BasicStroke(1));
+			for (var b: viewModel.getBalls()) {
+				var p = b.pos();
+				int x0 = (int)(ox + p.x()*delta);
+				int y0 = (int)(oy - p.y()*delta);
+				int radiusX = (int)(b.radius()*delta);
+				int radiusY = (int)(b.radius()*delta);
+				g2.drawOval(x0 - radiusX,y0 - radiusY,radiusX*2,radiusY*2);
+			}
+
+			g2.setStroke(new BasicStroke(3));
+			var pb = viewModel.getHumanBall();
+			if (pb != null) {
+				var p1 = pb.pos();
+				int x0 = (int)(ox + p1.x()*delta);
+				int y0 = (int)(oy - p1.y()*delta);
+				int radiusX = (int)(pb.radius()*delta);
+				int radiusY = (int)(pb.radius()*delta);
+				g2.drawOval(x0 - radiusX,y0 - radiusY,radiusX*2,radiusY*2);
+				g2.drawString("H", x0 - 4, y0 + 4);
+			}
+
+			var botBall = viewModel.getBotBall();
+			if (botBall != null) {
+				var p1 = botBall.pos();
+				int x0 = (int)(ox + p1.x()*delta);
+				int y0 = (int)(oy - p1.y()*delta);
+				int radiusX = (int)(botBall.radius()*delta);
+				int radiusY = (int)(botBall.radius()*delta);
+				g2.drawOval(x0 - radiusX,y0 - radiusY,radiusX*2,radiusY*2);
+				g2.drawString("B", x0 - 4, y0 + 4);
+			}
+
+			g2.setStroke(new BasicStroke(1));
+			g2.drawString("Num small balls: " + viewModel.getBalls().size(), 20, 2 * oy - 60);
+			g2.drawString("Average tick per sec: " + viewModel.getTickPerSec(), 20, 2 * oy - 40);
+
+			g2.setColor(Color.BLUE);
+			String humanScore = String.valueOf(viewModel.getHumanScore());
+			int x0 = (int)(0.2 * ox);
+			int y0 = (int)(1.4 * oy);
+			g2.setFont(new Font("Arial", Font.PLAIN, 90));
+			g2.drawString(humanScore, x0, y0);
+
+			String botScore = String.valueOf(viewModel.getBotScore());
+			x0 = (int)(1.7 * ox);
+			y0 = (int)(1.4 * oy);
+			g2.drawString(botScore, x0, y0);
+
+			String gameOverMsg = viewModel.getGameOverMessage();
+			if (gameOverMsg != null) {
+				g2.setColor(new Color(0, 0, 0, 170));
+				g2.fillRect(0, 0, getWidth(), getHeight());
+
+				g2.setColor(Color.WHITE);
+				g2.setFont(new Font("Arial", Font.BOLD, 72));
+				FontMetrics fm = g2.getFontMetrics();
+				String title = "GAME OVER";
+				g2.drawString(title, (getWidth() - fm.stringWidth(title)) / 2, oy - 20);
+
+				g2.setFont(new Font("Arial", Font.PLAIN, 32));
+				fm = g2.getFontMetrics();
+				g2.drawString(gameOverMsg, (getWidth() - fm.stringWidth(gameOverMsg)) / 2, oy + 40);
+			}
+		}
+
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		if (e.getExtendedKeyCode() == KeyEvent.VK_UP) {
+			cmdBuffer.put(new ArrowKeyCmd(Direction.UP));
+		} else if (e.getExtendedKeyCode() == KeyEvent.VK_LEFT) {
+			cmdBuffer.put(new ArrowKeyCmd(Direction.LEFT));
+		} else if (e.getExtendedKeyCode() == KeyEvent.VK_DOWN) {
+			cmdBuffer.put(new ArrowKeyCmd(Direction.DOWN));
+		} else if (e.getExtendedKeyCode() == KeyEvent.VK_RIGHT) {
+			cmdBuffer.put(new ArrowKeyCmd(Direction.RIGHT));
+		}
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {}
+
+}
