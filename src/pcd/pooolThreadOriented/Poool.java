@@ -4,7 +4,6 @@ import pcd.pooolThreadOriented.controller.KeyboardController;
 import pcd.pooolThreadOriented.controller.Cmd;
 import pcd.pooolThreadOriented.model.*;
 import pcd.pooolThreadOriented.util.BoundedBufferImpl;
-import pcd.pooolThreadOriented.util.WorkBufferImpl;
 import pcd.pooolThreadOriented.view.ViewModel;
 import pcd.pooolThreadOriented.view.View;
 
