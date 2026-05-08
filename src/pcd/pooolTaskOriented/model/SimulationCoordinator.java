@@ -1,8 +1,11 @@
 package pcd.pooolTaskOriented.model;
 
-import pcd.pooolTaskOriented.util.WorkBuffer;
+import pcd.pooolTaskOriented.util.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 public class SimulationCoordinator extends Thread {
@@ -10,19 +13,19 @@ public class SimulationCoordinator extends Thread {
 	private final Board board;
 	private final GameState gameState;
 	private final List<BoardObserver> observers;
-	private final WorkBuffer workBuffer;
+	private final ExecutorService exec;
 	private final int nWorker;
-	
+
 	public SimulationCoordinator(
 			Board board,
 			List<BoardObserver> observers,
-			WorkBuffer workBuffer,
+			ExecutorService exec,
 			int nWorker
 	) {
 		this.board = board;
 		this.gameState = board.getState();
 		this.observers = List.copyOf(observers);
-		this.workBuffer = workBuffer;
+		this.exec = exec;
 		this.nWorker = nWorker;
 	}
 
@@ -51,15 +54,13 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	private void updateState(long dt) {
-		distributeWork(ball -> ball.updateState(dt, board));
-		workBuffer.waitAll();
+		distributeLinearWork(ball -> ball.updateState(dt, board));
 
-		distributeWork(ball -> {
+		distributeLinearWork(ball -> {
 			for (var hole : board.getHoles()) {
 				Ball.resolveHole(ball, hole, gameState);
 			}
 		});
-		workBuffer.waitAll();
 
 		if (gameState.isGameOver())
 			return;
@@ -71,36 +72,48 @@ public class SimulationCoordinator extends Thread {
 		}
 
 		var allBalls = gameState.getAllBalls();
-		for (int i = 0; i < allBalls.size() - 1; i++) {
-			int finalI = i;
-			workBuffer.put(() -> {
-				for (int j = finalI + 1; j < allBalls.size(); j++) {
-					Ball.resolveCollision(allBalls.get(finalI), allBalls.get(j));
+		int nActualWorker = Math.min(nWorker, allBalls.size());
+
+		distributeWork(workerIndex -> {
+			for (int i = workerIndex; i < allBalls.size() - 1; i += nActualWorker) {
+				for (int j = i + 1; j < allBalls.size(); j++) {
+					Ball.resolveCollision(allBalls.get(i), allBalls.get(j));
 				}
-			});
-		}
-		workBuffer.waitAll();
+			}
+		}, nActualWorker);
 	}
 
-	public void distributeWork(Consumer<Ball> action) {
+	public void distributeWork(Consumer<Integer> action, int nActualWorker) {
+		var work = new ArrayList<Callable<Void>>();
+		for (int i = 0; i < nActualWorker; i++) {
+			int workerIndex = i;
+			work.add(() -> {
+				action.accept(workerIndex);
+				return null;
+			});
+		}
+		try {
+			exec.invokeAll(work);
+		} catch (Exception ignored) {}
+
+	}
+
+	public void distributeLinearWork(Consumer<Ball> action) {
 		var allBalls = gameState.getAllBalls();
 		int totalSize = allBalls.size();
-		if (totalSize == 0 || nWorker <= 0) return;
 
 		int actualWorkers = Math.min(nWorker, totalSize);
 		int workAmount = totalSize / actualWorkers;
 
-		for (int i = 0; i < actualWorkers; i++) {
-			int start = i * workAmount;
+		distributeWork(workerIndex -> {
+			int start = workerIndex * workAmount;
 			// L'ultimo worker prende tutti gli elementi fino alla fine della lista,
 			// includendo il resto della divisione
-			int end = (i == actualWorkers - 1) ? totalSize : start + workAmount;
-			workBuffer.put(() -> {
-				for (int j = start; j < end; j++) {
-					action.accept(allBalls.get(j));
-				}
-			});
-		}
+			int end = (workerIndex == actualWorkers - 1) ? totalSize : start + workAmount;
+			for (int j = start; j < end; j++) {
+				action.accept(allBalls.get(j));
+			}
+		}, nWorker);
 	}
 
 	private void setEndGame() {
