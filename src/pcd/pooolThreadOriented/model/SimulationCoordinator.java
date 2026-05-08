@@ -48,9 +48,9 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	private void updateState(long dt) {
-		distributeWork(ball -> ball.updateState(dt, board));
+		distributeLinearWork(ball -> ball.updateState(dt, board));
 
-		distributeWork(ball -> {
+		distributeLinearWork(ball -> {
 			for (var hole : board.getHoles()) {
 				Ball.resolveHole(ball, hole, gameState);
 			}
@@ -66,61 +66,45 @@ public class SimulationCoordinator extends Thread {
 		}
 
 		var allBalls = gameState.getAllBalls();
-		int totalSize = allBalls.size();
-		if (totalSize == 0 || nWorker <= 0) return;
+		int nActualWorker = Math.min(nWorker, allBalls.size());
 
-		int actualWorkers = Math.min(nWorker, totalSize);
-		var latch = new LatchImpl(nWorker);
-
-		for (int i = 0; i < actualWorkers; i++) {
-			int finalI = i;
-			var worker = new SimulationWorker(latch, () -> {
-				for (int k = finalI; k < allBalls.size() - 1; k += actualWorkers) {
-					for (int j = k + 1; j < allBalls.size(); j++) {
-						Ball.resolveCollision(allBalls.get(k), allBalls.get(j));
-					}
-				}
-			});
-			worker.start();
-		}
-		latch.await();
-
-
-
-//		var allBalls = gameState.getAllBalls();
-//		for (int i = 0; i < allBalls.size() - 1; i++) {
-//			int finalI = i;
-//			workBuffer.put(() -> {
-//				for (int j = finalI + 1; j < allBalls.size(); j++) {
-//					Ball.resolveCollision(allBalls.get(finalI), allBalls.get(j));
-//				}
-//			});
-//		}
+        distributeWork(workerIndex -> {
+            for (int i = workerIndex; i < allBalls.size() - 1; i += nActualWorker) {
+                for (int j = i + 1; j < allBalls.size(); j++) {
+                    Ball.resolveCollision(allBalls.get(i), allBalls.get(j));
+                }
+            }
+        }, nActualWorker);
 	}
 
-	public void distributeWork(Consumer<Ball> action) {
+    public void distributeWork(Consumer<Integer> action, int nActualWorker) {
+        var latch = new LatchImpl(nActualWorker);
+        for (int i = 0; i < nActualWorker; i++) {
+            int workerIndex = i;
+            var worker = new SimulationWorker(latch,
+                    () -> action.accept(workerIndex)
+            );
+            worker.start();
+        }
+        latch.await();
+    }
+
+	public void distributeLinearWork(Consumer<Ball> action) {
 		var allBalls = gameState.getAllBalls();
 		int totalSize = allBalls.size();
-		if (totalSize == 0 || nWorker <= 0) return;
 
 		int actualWorkers = Math.min(nWorker, totalSize);
 		int workAmount = totalSize / actualWorkers;
 
-		var latch = new LatchImpl(nWorker);
-
-		for (int i = 0; i < actualWorkers; i++) {
-			int start = i * workAmount;
-			// L'ultimo worker prende tutti gli elementi fino alla fine della lista,
-			// includendo il resto della divisione
-			int end = (i == actualWorkers - 1) ? totalSize : start + workAmount;
-			var worker = new SimulationWorker(latch, () -> {
-				for (int j = start; j < end; j++) {
-					action.accept(allBalls.get(j));
-				}
-			});
-			worker.start();
-		}
-		latch.await();
+        distributeWork(workerIndex -> {
+            int start = workerIndex * workAmount;
+            // L'ultimo worker prende tutti gli elementi fino alla fine della lista,
+            // includendo il resto della divisione
+            int end = (workerIndex == actualWorkers - 1) ? totalSize : start + workAmount;
+            for (int j = start; j < end; j++) {
+                action.accept(allBalls.get(j));
+            }
+        }, nWorker);
 	}
 
 	private void setEndGame() {
