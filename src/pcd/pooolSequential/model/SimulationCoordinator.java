@@ -20,6 +20,7 @@ public class SimulationCoordinator extends Thread {
 		long nTicks = 0;
 		long t0 = System.currentTimeMillis();
 		long lastUpdateTime = System.currentTimeMillis();
+		long tickPerSec = 0;
 		while (!gameState.isGameOver()) {
 			long elapsed = System.currentTimeMillis() - lastUpdateTime;
 			lastUpdateTime = System.currentTimeMillis();
@@ -27,26 +28,26 @@ public class SimulationCoordinator extends Thread {
 			this.updateState(elapsed);
 
 			nTicks++;
-			long framePerSec = 0;
+			tickPerSec = 0;
 			long dt = (System.currentTimeMillis() - t0);
 			if (dt > 0) {
-				framePerSec = nTicks*1000/dt;
+				tickPerSec = nTicks*1000/dt;
 			}
-			notifyObservers(framePerSec);
+			notifyObservers(tickPerSec);
 		}
 		for (var o : observers) {
-			o.gameOver(gameState.getGameResult());
+			o.gameOver(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec, gameState.getGameResult());
 		}
 	}
 
-	public synchronized void updateState(long dt) {
-		var allBalls0 = gameState.getAllBalls();
+	private void updateState(long dt) {
+		var allBalls = gameState.getAllBalls();
 
-		for (var b : allBalls0) {
+		for (var b : allBalls) {
 			b.updateState(dt, board);
 		}
 
-		for (var ball : allBalls0) {
+		for (var ball : allBalls) {
 			for (var hole : board.getHoles()) {
 				Ball.resolveHole(ball, hole, gameState);
 			}
@@ -55,14 +56,13 @@ public class SimulationCoordinator extends Thread {
 		if (gameState.isGameOver())
 			return;
 
-		var balls = gameState.getSmallBalls();
-		if (balls.isEmpty()) {
+		var smallBalls = gameState.getSmallBalls();
+		if (smallBalls.isEmpty()) {
 			setEndGame();
 			return;
 		}
 
-		var allBalls = gameState.getAllBalls();
-
+		allBalls = gameState.getAllBalls();
 		for (int i = 0; i < allBalls.size() - 1; i++) {
 			for (int j = i + 1; j < allBalls.size(); j++) {
 				Ball.resolveCollision(allBalls.get(i), allBalls.get(j));
@@ -84,4 +84,5 @@ public class SimulationCoordinator extends Thread {
 			o.modelUpdated(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), framePerSec);
 		}
 	}
+
 }

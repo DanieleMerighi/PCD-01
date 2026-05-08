@@ -79,4 +79,5 @@ public class Board {
         }
         return new BoardViewInfo(humanBall, botBall, holes);
     }
+
 }

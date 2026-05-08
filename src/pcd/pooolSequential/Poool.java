@@ -1,11 +1,11 @@
 package pcd.pooolSequential;
 
 import pcd.pooolSequential.controller.Cmd;
+import pcd.pooolSequential.model.*;
 import pcd.pooolSequential.util.BoundedBufferImpl;
 import pcd.pooolSequential.view.View;
 import pcd.pooolSequential.view.ViewModel;
 import pcd.pooolSequential.controller.KeyboardController;
-import pcd.pooolSequential.model.SimulationCoordinator;
 
 import java.util.List;
 
@@ -14,9 +14,9 @@ public class Poool {
 
         // var boardConf = new MinimalBoardConf();
         // var boardConf = new LargeBoardConf();
-        var boardConf = new pcd.pooolSequential.model.MassiveBoardConf();
+        var boardConf = new MassiveBoardConf();
 
-        var board = new pcd.pooolSequential.model.Board(boardConf);
+        var board = new Board(boardConf);
         var gameState = board.getState();
 
         var cmdBuffer = new BoundedBufferImpl<Cmd>(100);

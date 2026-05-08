@@ -7,6 +7,6 @@ public interface BoardObserver {
 
     void modelUpdated(BoardViewInfo boardViewInfo, GameStateViewInfo gameStateViewInfo, long tickPerSec);
 
-    void gameOver(String result);
+    void gameOver(BoardViewInfo boardViewInfo, GameStateViewInfo gameStateViewInfo, long tickPerSec, String result);
 
 }

@@ -25,19 +25,22 @@ public class View implements BoardObserver {
 	@Override
 	public void modelUpdated(BoardViewInfo boardViewInfo, GameStateViewInfo gameStateViewInfo, long tickPerSec) {
 		long elapsed = System.currentTimeMillis() - lastUpdateTime;
-
 		if (elapsed > MIN_REPAINT_INTERVAL) {
-			this.viewModel.update(boardViewInfo, gameStateViewInfo, tickPerSec);
-			SwingUtilities.invokeLater(this.frame::render);
-			lastUpdateTime = System.currentTimeMillis();
+			SwingUtilities.invokeLater(() -> {
+				this.viewModel.update(boardViewInfo, gameStateViewInfo, tickPerSec);
+				this.frame.render();
+				lastUpdateTime = System.currentTimeMillis();
+			});
 		}
-
 	}
 
 	@Override
-	public void gameOver(String result) {
-		this.viewModel.setGameOver(result);
-		SwingUtilities.invokeLater(this.frame::render);
+	public void gameOver(BoardViewInfo boardViewInfo, GameStateViewInfo gameStateViewInfo, long tickPerSec, String result) {
+		SwingUtilities.invokeLater(() -> {
+			this.viewModel.update(boardViewInfo, gameStateViewInfo, tickPerSec);
+			this.viewModel.setGameOver(result);
+			this.frame.render();
+		});
 	}
 
 }

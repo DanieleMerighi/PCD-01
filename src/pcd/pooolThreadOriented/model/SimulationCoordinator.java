@@ -31,6 +31,7 @@ public class SimulationCoordinator extends Thread {
 		long nTicks = 0;
 		long t0 = System.currentTimeMillis();
 		long lastUpdateTime = System.currentTimeMillis();
+		long tickPerSec = 0;
 		while (!gameState.isGameOver()) {
 			long elapsed = System.currentTimeMillis() - lastUpdateTime;
 			lastUpdateTime = System.currentTimeMillis();
@@ -38,7 +39,7 @@ public class SimulationCoordinator extends Thread {
 			this.updateState(elapsed);
 
 			nTicks++;
-			long tickPerSec = 0;
+			tickPerSec = 0;
 			long dt = (System.currentTimeMillis() - t0);
 			if (dt > 0) {
 				tickPerSec = nTicks*1000/dt;
@@ -46,7 +47,7 @@ public class SimulationCoordinator extends Thread {
 			notifyObservers(tickPerSec);
 		}
 		for (var o : observers) {
-			o.gameOver(gameState.getGameResult());
+			o.gameOver(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec, gameState.getGameResult());
 		}
 	}
 
@@ -62,8 +63,8 @@ public class SimulationCoordinator extends Thread {
 		if (gameState.isGameOver())
 			return;
 
-		var balls = gameState.getSmallBalls();
-		if (balls.isEmpty()) {
+		var smallBalls = gameState.getSmallBalls();
+		if (smallBalls.isEmpty()) {
 			setEndGame();
 			return;
 		}

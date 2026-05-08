@@ -21,7 +21,7 @@ public class ViewModel {
 		this.tickPerSec = tickPerSec;
 	}
 
-	synchronized ArrayList<BallViewInfo> getBalls(){
+	public synchronized ArrayList<BallViewInfo> getBalls(){
 		return new ArrayList<>(gameStateViewInfo.balls());
 	}
 
@@ -29,23 +29,23 @@ public class ViewModel {
 		return tickPerSec;
 	}
 
-	synchronized BallViewInfo getHumanBall() {
+	public synchronized BallViewInfo getHumanBall() {
 		return boardViewInfo.humanBall();
 	}
 
-	synchronized BallViewInfo getBotBall() {
+	public synchronized BallViewInfo getBotBall() {
 		return boardViewInfo.botBall();
 	}
 
-	synchronized ArrayList<HoleViewInfo> getHoles() {
+	public synchronized ArrayList<HoleViewInfo> getHoles() {
 		return new ArrayList<>(boardViewInfo.holes());
 	}
 
-	synchronized int getHumanScore() {
+	public synchronized int getHumanScore() {
 		return gameStateViewInfo.humanScore();
 	}
 
-	synchronized int getBotScore() {
+	public synchronized int getBotScore() {
 		return gameStateViewInfo.botScore();
 	}
 
