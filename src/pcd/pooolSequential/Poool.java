@@ -1,0 +1,38 @@
+package pcd.pooolSequential;
+
+import pcd.pooolSequential.controller.ActiveController;
+import pcd.pooolSequential.controller.Cmd;
+import pcd.pooolSequential.model.*;
+import pcd.pooolSequential.util.BoundedBufferImpl;
+import pcd.pooolSequential.view.ViewModel;
+import pcd.pooolSequential.view.View;
+
+import java.util.List;
+
+public class Poool {
+    public static void main(String[] argv) {
+
+        // var boardConf = new MinimalBoardConf();
+        // var boardConf = new LargeBoardConf();
+        var boardConf = new MassiveBoardConf();
+
+        Board board = new Board(boardConf);
+
+        var cmdBuffer = new BoundedBufferImpl<Cmd>(100);
+
+        var controller = new ActiveController(board, cmdBuffer);
+        controller.start();
+
+        var viewModel = new ViewModel(board.getBoardViewInfo());
+        var view = new View(viewModel, cmdBuffer, 1200, 800);
+
+        var updater = new AutonomousUpdater(board, List.of(view));
+        var botUpdater = new BotUpdater(board);
+
+        updater.start();
+        botUpdater.start();
+
+
+        view.display();
+    }
+}
