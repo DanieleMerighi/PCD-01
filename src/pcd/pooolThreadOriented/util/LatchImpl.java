@@ -2,17 +2,15 @@ package pcd.pooolThreadOriented.util;
 
 public class LatchImpl implements Latch {
 
-    private final int nCountDowns;
-    private int nCounts;
+    private int counter;
 
-    public LatchImpl(int nCountDowns) {
-        this.nCountDowns = nCountDowns;
-        nCounts = 0;
+    public LatchImpl(int initialCount) {
+        counter = initialCount;
     }
 
     @Override
     public synchronized void await() {
-        while (nCounts < nCountDowns) {
+        while (counter > 0) {
             try {
                 wait();
             } catch (InterruptedException ignored) {}
@@ -21,10 +19,16 @@ public class LatchImpl implements Latch {
 
     @Override
     public synchronized void countDown() {
-        nCounts++;
-        if (nCounts == nCountDowns) {
+        counter--;
+        if (counter == 0) {
             notifyAll();
         }
+    }
+
+    @Override
+    public synchronized void reset(int initialCount) {
+        counter = initialCount;
+        notifyAll();
     }
 
 }

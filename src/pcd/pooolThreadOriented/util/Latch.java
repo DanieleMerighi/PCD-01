@@ -6,4 +6,6 @@ public interface Latch {
 
     void countDown();
 
+	void reset(int initialCount);
+
 }

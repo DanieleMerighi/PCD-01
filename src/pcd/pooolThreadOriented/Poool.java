@@ -4,9 +4,13 @@ import pcd.pooolThreadOriented.controller.KeyboardController;
 import pcd.pooolThreadOriented.controller.Cmd;
 import pcd.pooolThreadOriented.model.*;
 import pcd.pooolThreadOriented.util.BoundedBufferImpl;
+import pcd.pooolThreadOriented.util.LatchImpl;
+import pcd.pooolThreadOriented.util.SynchBox;
+import pcd.pooolThreadOriented.util.SynchBoxImpl;
 import pcd.pooolThreadOriented.view.ViewModel;
 import pcd.pooolThreadOriented.view.View;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Poool {
@@ -28,7 +32,15 @@ public class Poool {
         var view = new View(viewModel, cmdBuffer, 1200, 800);
 
         int nWorker = Runtime.getRuntime().availableProcessors() + 1;
-        var updater = new SimulationCoordinator(board, List.of(view), nWorker);
+        var workBuffer = new ArrayList<SynchBox<Runnable>>(nWorker);
+        var workLatch = new LatchImpl(nWorker);
+        for (int i = 0; i < nWorker; i++) {
+            var workBox = new SynchBoxImpl<Runnable>();
+            workBuffer.add(workBox);
+            var worker = new SimulationWorker(workBox, workLatch, gameState);
+            worker.start();
+        }
+        var updater = new SimulationCoordinator(board, List.of(view), workBuffer, workLatch);
 
         var botUpdater = new BotUpdater(board);
 

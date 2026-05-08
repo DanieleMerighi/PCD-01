@@ -1,21 +1,27 @@
 package pcd.pooolThreadOriented.model;
 
 import pcd.pooolThreadOriented.util.Latch;
+import pcd.pooolThreadOriented.util.SynchBox;
 
 public class SimulationWorker extends Thread {
 
-	private final Latch latch;
-	private final Runnable work;
+	private final SynchBox<Runnable> workBox;
+	private final Latch workLatch;
+	private final GameState gameState;
 
-	public SimulationWorker(Latch latch, Runnable work) {
-		this.latch = latch;
-		this.work = work;
+	public SimulationWorker(SynchBox<Runnable> workBox, Latch workLatch, GameState gameState) {
+		this.workBox = workBox;
+		this.workLatch = workLatch;
+		this.gameState = gameState;
 	}
 
 	@Override
 	public void run() {
-		work.run();
-		latch.countDown();
+		while (!gameState.isGameOver()) {
+			var work = workBox.get();
+			work.run();
+			workLatch.countDown();
+		}
 	}
 
 }

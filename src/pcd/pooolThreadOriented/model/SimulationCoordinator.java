@@ -10,17 +10,20 @@ public class SimulationCoordinator extends Thread {
 	private final Board board;
 	private final GameState gameState;
 	private final List<BoardObserver> observers;
-	private final int nWorker;
+	private final List<SynchBox<Runnable>> workBuffer;
+	private final Latch workLatch;
 	
 	public SimulationCoordinator(
 			Board board,
 			List<BoardObserver> observers,
-			int nWorker
+			List<SynchBox<Runnable>> workBuffer,
+			Latch workLatch
 	) {
 		this.board = board;
 		this.gameState = board.getState();
 		this.observers = List.copyOf(observers);
-		this.nWorker = nWorker;
+		this.workBuffer = workBuffer;
+		this.workLatch = workLatch;
 	}
 
 	@Override
@@ -66,7 +69,7 @@ public class SimulationCoordinator extends Thread {
 		}
 
 		var allBalls = gameState.getAllBalls();
-		int nActualWorker = Math.min(nWorker, allBalls.size());
+		int nActualWorker = Math.min(workBuffer.size(), allBalls.size());
 
         distributeWork(workerIndex -> {
             for (int i = workerIndex; i < allBalls.size() - 1; i += nActualWorker) {
@@ -78,33 +81,32 @@ public class SimulationCoordinator extends Thread {
 	}
 
     public void distributeWork(Consumer<Integer> action, int nActualWorker) {
-        var latch = new LatchImpl(nActualWorker);
+		workLatch.reset(nActualWorker);
         for (int i = 0; i < nActualWorker; i++) {
             int workerIndex = i;
-            var worker = new SimulationWorker(latch,
-                    () -> action.accept(workerIndex)
-            );
-            worker.start();
+			workBuffer.get(i).put(
+					() -> action.accept(workerIndex)
+			);
         }
-        latch.await();
+		workLatch.await();
     }
 
 	public void distributeLinearWork(Consumer<Ball> action) {
 		var allBalls = gameState.getAllBalls();
 		int totalSize = allBalls.size();
 
-		int actualWorkers = Math.min(nWorker, totalSize);
-		int workAmount = totalSize / actualWorkers;
+		int nActualWorker = Math.min(workBuffer.size(), totalSize);
+		int workAmount = totalSize / nActualWorker;
 
         distributeWork(workerIndex -> {
             int start = workerIndex * workAmount;
             // L'ultimo worker prende tutti gli elementi fino alla fine della lista,
             // includendo il resto della divisione
-            int end = (workerIndex == actualWorkers - 1) ? totalSize : start + workAmount;
+            int end = (workerIndex == nActualWorker - 1) ? totalSize : start + workAmount;
             for (int j = start; j < end; j++) {
                 action.accept(allBalls.get(j));
             }
-        }, nWorker);
+        }, nActualWorker);
 	}
 
 	private void setEndGame() {
