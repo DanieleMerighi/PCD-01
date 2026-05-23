@@ -1,0 +1,11 @@
+target = pcd.pooolThreadOrientedJpf.PooolJpf
+
+classpath = /pcd-jpf/target/classes
+
+listener = gov.nasa.jpf.listener.PreciseRaceDetector
+
+report.console.property_violation = error,trace
+
+# Comment out the listener above and uncomment one of these to focus on a different bug class:
+# listener = gov.nasa.jpf.listener.DeadlockAnalyzer
+# search.properties = gov.nasa.jpf.vm.NotDeadlockedProperty,gov.nasa.jpf.vm.NoUncaughtExceptionsProperty
