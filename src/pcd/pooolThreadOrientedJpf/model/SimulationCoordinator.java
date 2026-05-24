@@ -40,6 +40,9 @@ public class SimulationCoordinator extends Thread {
             this.updateState(FIXED_TICK_DT_MS);
             tick++;
         }
+        for (SynchBox<Runnable> box : workBuffer) {
+            box.end();
+        }
     }
 
     private void updateState(long dt) {
