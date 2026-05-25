@@ -69,13 +69,13 @@ public class Ball {
     public static void resolveCollision(Ball a, Ball b) {
 
     	/* check if there is a collision */
-    	
-    	/* compute dv = b.pos - a.pos vector */
 
-    	double dx   = b.pos.x() - a.pos.x();
-        double dy   = b.pos.y() - a.pos.y();
+    	P2d aPos = a.getPos();
+    	P2d bPos = b.getPos();
+    	double dx   = bPos.x() - aPos.x();
+        double dy   = bPos.y() - aPos.y();
         double dist = Math.hypot(dx, dy);
-        double minD = a.radius + b.radius;
+        double minD = a.getRadius() + b.getRadius();
         
         /* 
          * There is a collision if the distance between the two balls is less than the sum of the radii 
