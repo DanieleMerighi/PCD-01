@@ -74,6 +74,11 @@ public class SimulationCoordinator extends Thread {
 			}
 			notifyObservers(tickPerSec);
 		}
+		// Chiude i box dei worker per evitare il deadlock di shutdown
+		// (worker bloccati in workBox.get() senza nessuno che faccia put).
+		for (var box : workBuffer) {
+			box.end();
+		}
 		for (var o : observers) {
 			o.gameOver(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec, gameState.getGameResult());
 		}

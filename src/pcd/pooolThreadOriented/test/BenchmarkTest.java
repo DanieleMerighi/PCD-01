@@ -38,7 +38,7 @@ public class BenchmarkTest {
                     for (int i = 0; i < workers; i++) {
                         var workBox = new SynchBoxImpl<Runnable>();
                         workBuffer.add(workBox);
-                        var worker = new SimulationWorker(workBox, workLatch, gameState);
+                        var worker = new SimulationWorker(workBox, workLatch);
                         worker.start();
                     }
                     var updater = new SimulationCoordinator(board, List.of(), workBuffer, workLatch);

@@ -46,6 +46,9 @@ public class SimulationCoordinator extends Thread {
 			}
 			notifyObservers(tickPerSec);
 		}
+		for (var box : workBuffer) {
+			box.end();
+		}
 		for (var o : observers) {
 			o.gameOver(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec, gameState.getGameResult());
 		}

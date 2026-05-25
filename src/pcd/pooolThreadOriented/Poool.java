@@ -37,7 +37,7 @@ public class Poool {
         for (int i = 0; i < nWorker; i++) {
             var workBox = new SynchBoxImpl<Runnable>();
             workBuffer.add(workBox);
-            var worker = new SimulationWorker(workBox, workLatch, gameState);
+            var worker = new SimulationWorker(workBox, workLatch);
             worker.start();
         }
         var updater = new SimulationCoordinator(board, List.of(view), workBuffer, workLatch);
