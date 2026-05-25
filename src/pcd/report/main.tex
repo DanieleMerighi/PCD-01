@@ -30,19 +30,32 @@
 
 \section{Problem Analysis}
 
-%This section provides a detailed analysis of the \texttt{Poool} game from a concurrent programming perspective. The main computational challenge resides in the simulation loop, which must continuously handle physics updates, boundary collisions, and elastic collisions among thousands of small balls.
+This section provides a detailed analysis of the \texttt{Poool} game from a concurrent programming perspective. The main computational challenge resides in the simulation loop, which must continuously handle physics updates, boundary collisions, and elastic collisions among thousands of small balls.
 
-%The primary bottlenecks identified are:
-%\begin{itemize}
-%    \item \textbf{Linear State Updates:} Modifying positions and applying friction coefficients across large arrays of entities.
-%    \item \textbf{$O(\frac{n^2}{2})$ Collision Resolution:} The nested loop required to evaluate and resolve simultaneous impacts between every pair of balls represents the highest density of CPU cycles.
-%\end{itemize}
+The primary bottlenecks identified are:
+\begin{itemize}
+    \item \textbf{Linear State Updates:} Modifying positions and applying friction coefficients across large arrays of entities.
+    \item \textbf{$O(n^2)$ Collision Resolution:} The nested loop required to evaluate and resolve simultaneous impacts between every pair of balls represents the highest density of CPU cycles.
+\end{itemize}
 
 \section{System Architecture and Architectural Design}
 This section describes the high level structure of our proposed solution, focusing on the elements of concurrent programming, i.e. the active and passive components at play and their interactions. Visual formalisms, specifically Petri nets, are also used to demonstrate the overall behavior and to allow for preliminary model checking.
 
 \subsection{Parallelization Strategy}
-TODO.
+Having identified that the physics simulation represents the most taxing part of the program's computation, it will be the focus of our parallelization efforts. Since it is a CPU-bound problem, the goal will be to distribute the work evenly across all logical processors.
+
+Our solution involves a number of worker threads, handled manually in the Thread-Oriented version, and encapsulated by a \texttt{FixedThreadPool} executor in the Task-Oriented version. We have opted for long-living worker threads, implementing Agenda parallelism, which removes any thread creation overhead.
+
+Every simulation step consists of three phases: updating ball positions, detecting balls inside holes, resolving collisions. The first two phases are linear in the number of balls, thus it is easy to distribute the work evenly, while the collision phase involves $n(n-1)/2$ checks, requiring a more careful approach.
+
+We have decided to view the problem as a triangular matrix, having the rows alternate which worker they are assigned to, as depicted in \Cref{fig:collision_parallelization}. For a large number of balls, this makes for a sufficiently even partition.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{images/collision_parallelization.png}
+    \caption{Matrix representation of the collision resolution phase, showing how the work is partitioned.}
+    \label{fig:collision_parallelization}
+\end{figure}
 
 \subsection{Active Components}
 The concurrent program's execution involves instances of five active classes, each encapsulating a designated control flow.
@@ -50,7 +63,7 @@ The concurrent program's execution involves instances of five active classes, ea
 \item \texttt{KeyboardController}, responsible for the execution of issued keyboard commands, keeping the Graphical User Interface responsive.
 \item \texttt{BotUpdater}, periodically kicking the bot player's ball.
 \item \texttt{SimulationCoordinator}, distributing the computation for the  physics simulation.
-\item \texttt{SimulationWorker}, which performs an assigned portion of the simulation workload. In the Task-Oriented version it is replaced simply by \texttt{java.lang.Thread} and managed by the Executor framework. In both cases, multiple instances are expected to be active during the game's runtime.
+\item \texttt{SimulationWorker}, which performs an assigned portion of the simulation workload. In the Task-Oriented version it is replaced simply by \texttt{java.lang.Thread} and managed by the Java Executor framework. In both cases, multiple instances are expected to be active during the game's runtime.
 \item \texttt{java.awt.EventDispatchThread}, provided by Java Swing, which handles graphical events.
 \end{itemize}
 
@@ -68,7 +81,7 @@ Of these, \texttt{BoundedBuffer} and \texttt{Latch} are implemented following th
 \end{itemize}
 
 \subsection{Behavior Overview}
-We use Petri nets to show a simplified view of the program's information flow. At this level of abstraction the events are atomic, due to all monitor procedures being marked as \texttt{synchronized}. This also means that the mutual exclusion to these objects doesn't need to be depicted explicitly, focusing instead on the more high-level constructs.
+We use Petri nets to show a simplified view of the program's information flow. At this level of abstraction the events are atomic, due to all monitor procedures being marked as \texttt{synchronized}. This also means that the mutual exclusion to these objects doesn't need to be depicted explicitly, focusing instead on the more high level constructs.
 
 \begin{figure}[H]
     \centering
