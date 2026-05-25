@@ -5,7 +5,7 @@ import pcd.pooolThreadOriented.model.Board;
 import pcd.pooolThreadOriented.model.BoardObserver;
 import pcd.pooolThreadOriented.model.GameState;
 import pcd.pooolThreadOriented.util.Latch;
-import pcd.pooolThreadOriented.util.SynchBox;
+import pcd.pooolThreadOriented.util.SynchCell;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -15,13 +15,13 @@ public class SimulationCoordinator extends Thread {
 	private final Board board;
 	private final GameState gameState;
 	private final List<BoardObserver> observers;
-	private final List<SynchBox<Runnable>> workBuffer;
+	private final List<SynchCell<Runnable>> workBuffer;
 	private final Latch workLatch;
 	
 	public SimulationCoordinator(
 			Board board,
 			List<BoardObserver> observers,
-			List<SynchBox<Runnable>> workBuffer,
+			List<SynchCell<Runnable>> workBuffer,
 			Latch workLatch
 	) {
 		this.board = board;
@@ -74,10 +74,10 @@ public class SimulationCoordinator extends Thread {
 			}
 			notifyObservers(tickPerSec);
 		}
-		// Chiude i box dei worker per evitare il deadlock di shutdown
-		// (worker bloccati in workBox.get() senza nessuno che faccia put).
-		for (var box : workBuffer) {
-			box.end();
+		// Chiude i cell dei worker per evitare il deadlock di shutdown
+		// (worker bloccati in workCell.get() senza nessuno che faccia put).
+		for (var cell : workBuffer) {
+			cell.end();
 		}
 		for (var o : observers) {
 			o.gameOver(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec, gameState.getGameResult());

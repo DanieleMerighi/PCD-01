@@ -1,26 +1,24 @@
 package pcd.pooolThreadOrientedJpf.model;
 
 import pcd.pooolThreadOrientedJpf.util.Latch;
-import pcd.pooolThreadOrientedJpf.util.SynchBox;
+import pcd.pooolThreadOrientedJpf.util.SynchCell;
 
 import java.util.Optional;
 
 public class SimulationWorker extends Thread {
 
-    private final SynchBox<Runnable> workBox;
+    private final SynchCell<Runnable> workCell;
     private final Latch workLatch;
-    private final GameState gameState;
 
-    public SimulationWorker(SynchBox<Runnable> workBox, Latch workLatch, GameState gameState) {
-        this.workBox = workBox;
+    public SimulationWorker(SynchCell<Runnable> workCell, Latch workLatch) {
+        this.workCell = workCell;
         this.workLatch = workLatch;
-        this.gameState = gameState;
     }
 
     @Override
     public void run() {
         while (true) {
-            Optional<Runnable> work = workBox.get();
+            Optional<Runnable> work = workCell.get();
             if (work.isEmpty()) {
                 break;
             }
@@ -28,4 +26,5 @@ public class SimulationWorker extends Thread {
             workLatch.countDown();
         }
     }
+
 }

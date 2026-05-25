@@ -2,7 +2,7 @@ package pcd.pooolThreadOrientedJpf.util;
 
 import java.util.Optional;
 
-public class SynchBoxImpl<T> implements SynchBox<T> {
+public class SynchCellImpl<T> implements SynchCell<T> {
 
     private T element;
     private boolean closed = false;
@@ -10,7 +10,7 @@ public class SynchBoxImpl<T> implements SynchBox<T> {
     @Override
     public synchronized void put(T e) {
         if (closed) {
-            throw new IllegalStateException("Put on a closed SynchBox");
+            throw new IllegalStateException("Put on a closed SynchCell");
         }
         while (element != null) {
             try {

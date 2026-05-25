@@ -5,8 +5,8 @@ import pcd.pooolThreadOriented.controller.Cmd;
 import pcd.pooolThreadOriented.model.*;
 import pcd.pooolThreadOriented.util.BoundedBufferImpl;
 import pcd.pooolThreadOriented.util.LatchImpl;
-import pcd.pooolThreadOriented.util.SynchBox;
-import pcd.pooolThreadOriented.util.SynchBoxImpl;
+import pcd.pooolThreadOriented.util.SynchCell;
+import pcd.pooolThreadOriented.util.SynchCellImpl;
 import pcd.pooolThreadOriented.view.ViewModel;
 import pcd.pooolThreadOriented.view.View;
 
@@ -32,12 +32,12 @@ public class Poool {
         var view = new View(viewModel, cmdBuffer, 1200, 800);
 
         int nWorker = Runtime.getRuntime().availableProcessors() + 1;
-        var workBuffer = new ArrayList<SynchBox<Runnable>>(nWorker);
+        var workBuffer = new ArrayList<SynchCell<Runnable>>(nWorker);
         var workLatch = new LatchImpl(nWorker);
         for (int i = 0; i < nWorker; i++) {
-            var workBox = new SynchBoxImpl<Runnable>();
-            workBuffer.add(workBox);
-            var worker = new SimulationWorker(workBox, workLatch);
+            var workCell = new SynchCellImpl<Runnable>();
+            workBuffer.add(workCell);
+            var worker = new SimulationWorker(workCell, workLatch);
             worker.start();
         }
         var updater = new SimulationCoordinator(board, List.of(view), workBuffer, workLatch);

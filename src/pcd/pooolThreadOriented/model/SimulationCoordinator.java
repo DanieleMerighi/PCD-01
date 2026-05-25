@@ -10,13 +10,13 @@ public class SimulationCoordinator extends Thread {
 	private final Board board;
 	private final GameState gameState;
 	private final List<BoardObserver> observers;
-	private final List<SynchBox<Runnable>> workBuffer;
+	private final List<SynchCell<Runnable>> workBuffer;
 	private final Latch workLatch;
 	
 	public SimulationCoordinator(
 			Board board,
 			List<BoardObserver> observers,
-			List<SynchBox<Runnable>> workBuffer,
+			List<SynchCell<Runnable>> workBuffer,
 			Latch workLatch
 	) {
 		this.board = board;
@@ -46,8 +46,8 @@ public class SimulationCoordinator extends Thread {
 			}
 			notifyObservers(tickPerSec);
 		}
-		for (var box : workBuffer) {
-			box.end();
+		for (var cell : workBuffer) {
+			cell.end();
 		}
 		for (var o : observers) {
 			o.gameOver(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec, gameState.getGameResult());

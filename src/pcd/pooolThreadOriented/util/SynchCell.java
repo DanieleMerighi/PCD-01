@@ -2,7 +2,7 @@ package pcd.pooolThreadOriented.util;
 
 import java.util.Optional;
 
-public interface SynchBox<T> {
+public interface SynchCell<T> {
 
 	void put(T e);
 

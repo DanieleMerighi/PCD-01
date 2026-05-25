@@ -2,15 +2,15 @@ package pcd.pooolThreadOriented.util;
 
 import java.util.Optional;
 
-public class SynchBoxImpl<T> implements SynchBox<T> {
+public class SynchCellImpl<T> implements SynchCell<T> {
 
-	private T element;
+	private T element = null;
 	private boolean closed = false;
 
 	@Override
 	public synchronized void put(T e) {
 		if (closed) {
-			throw new IllegalStateException("put on a closed SynchBox");
+			throw new IllegalStateException("put on a closed SynchCell");
 		}
 		while (element != null) {
 			try {

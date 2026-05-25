@@ -1,7 +1,7 @@
 package pcd.pooolThreadOrientedJpf.model;
 
 import pcd.pooolThreadOrientedJpf.util.Latch;
-import pcd.pooolThreadOrientedJpf.util.SynchBox;
+import pcd.pooolThreadOrientedJpf.util.SynchCell;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -16,13 +16,13 @@ public class SimulationCoordinator extends Thread {
 
     private final Board board;
     private final GameState gameState;
-    private final List<SynchBox<Runnable>> workBuffer;
+    private final List<SynchCell<Runnable>> workBuffer;
     private final Latch workLatch;
     private final int maxTicks;
 
     public SimulationCoordinator(
             Board board,
-            List<SynchBox<Runnable>> workBuffer,
+            List<SynchCell<Runnable>> workBuffer,
             Latch workLatch,
             int maxTicks
     ) {
@@ -40,8 +40,8 @@ public class SimulationCoordinator extends Thread {
             this.updateState(FIXED_TICK_DT_MS);
             tick++;
         }
-        for (SynchBox<Runnable> box : workBuffer) {
-            box.end();
+        for (SynchCell<Runnable> cell : workBuffer) {
+            cell.end();
         }
     }
 

@@ -11,8 +11,8 @@ import pcd.pooolThreadOrientedJpf.model.SimulationCoordinator;
 import pcd.pooolThreadOrientedJpf.model.SimulationWorker;
 import pcd.pooolThreadOrientedJpf.model.V2d;
 import pcd.pooolThreadOrientedJpf.util.LatchImpl;
-import pcd.pooolThreadOrientedJpf.util.SynchBox;
-import pcd.pooolThreadOrientedJpf.util.SynchBoxImpl;
+import pcd.pooolThreadOrientedJpf.util.SynchCell;
+import pcd.pooolThreadOrientedJpf.util.SynchCellImpl;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,14 +22,14 @@ import java.util.List;
  * Scenario: N_WORKERS = 3, BoardConf con solo HUMAN + BOT (zero small ball).
  * "nActualWorker = min(workBuffer.size(), allBalls.size())" vale min(3, 2) = 2:
  * Worker 0 e Worker 1 ricevono task, Worker 2 NON riceve mai nulla per tutta
- * la simulazione e resta bloccato in workBox.get() dall'istante zero.
+ * la simulazione e resta bloccato in workCell.get() dall'istante zero.
  *
  * Inoltre con 0 small ball il primo tick entra subito nel ramo
  * "if (smallBalls.isEmpty()) setEndGame()" del coordinator, quindi la
  * simulazione termina molto in fretta e lo state space resta gestibile
  * (la versione precedente con N_WORKERS=5 dava OOM dopo 7h30).
  *
- * Verifica che lo shutdown via SynchBox.end() risvegli e termini
+ * Verifica che lo shutdown via SynchCell.end() risvegli e termini
  * correttamente anche il worker idle che non si e' mai svegliato dal
  * suo primo wait().
  */
@@ -43,13 +43,13 @@ public class MoreWorkersThanBallsJpf {
         BoardConf boardConf = new TwoBallsConf();
         Board board = new Board(boardConf);
 
-        List<SynchBox<Runnable>> workBuffer = new ArrayList<SynchBox<Runnable>>(N_WORKERS);
+        List<SynchCell<Runnable>> workBuffer = new ArrayList<SynchCell<Runnable>>(N_WORKERS);
         LatchImpl workLatch = new LatchImpl(N_WORKERS);
 
         for (int i = 0; i < N_WORKERS; i++) {
-            SynchBox<Runnable> workBox = new SynchBoxImpl<Runnable>();
-            workBuffer.add(workBox);
-            SimulationWorker worker = new SimulationWorker(workBox, workLatch, board.getState());
+            SynchCell<Runnable> workCell = new SynchCellImpl<Runnable>();
+            workBuffer.add(workCell);
+            SimulationWorker worker = new SimulationWorker(workCell, workLatch);
             worker.start();
         }
 

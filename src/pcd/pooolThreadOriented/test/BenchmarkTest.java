@@ -4,8 +4,8 @@ import pcd.pooolThreadOriented.model.Board;
 import pcd.pooolThreadOriented.model.MassiveBoardConf;
 import pcd.pooolThreadOriented.model.SimulationWorker;
 import pcd.pooolThreadOriented.util.LatchImpl;
-import pcd.pooolThreadOriented.util.SynchBox;
-import pcd.pooolThreadOriented.util.SynchBoxImpl;
+import pcd.pooolThreadOriented.util.SynchCell;
+import pcd.pooolThreadOriented.util.SynchCellImpl;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -33,12 +33,12 @@ public class BenchmarkTest {
                     var board = new Board(boardConf);
                     var gameState = board.getState();
 
-                    var workBuffer = new ArrayList<SynchBox<Runnable>>(workers);
+                    var workBuffer = new ArrayList<SynchCell<Runnable>>(workers);
                     var workLatch = new LatchImpl(workers);
                     for (int i = 0; i < workers; i++) {
-                        var workBox = new SynchBoxImpl<Runnable>();
-                        workBuffer.add(workBox);
-                        var worker = new SimulationWorker(workBox, workLatch);
+                        var workCell = new SynchCellImpl<Runnable>();
+                        workBuffer.add(workCell);
+                        var worker = new SimulationWorker(workCell, workLatch);
                         worker.start();
                     }
                     var updater = new SimulationCoordinator(board, List.of(), workBuffer, workLatch);

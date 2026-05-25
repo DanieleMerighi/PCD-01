@@ -11,8 +11,8 @@ import pcd.pooolThreadOrientedJpf.model.SimulationCoordinator;
 import pcd.pooolThreadOrientedJpf.model.SimulationWorker;
 import pcd.pooolThreadOrientedJpf.model.V2d;
 import pcd.pooolThreadOrientedJpf.util.LatchImpl;
-import pcd.pooolThreadOrientedJpf.util.SynchBox;
-import pcd.pooolThreadOrientedJpf.util.SynchBoxImpl;
+import pcd.pooolThreadOrientedJpf.util.SynchCell;
+import pcd.pooolThreadOrientedJpf.util.SynchCellImpl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,13 +39,13 @@ public class ActualCollisionJpf {
         BoardConf boardConf = new CollidingPairConf();
         Board board = new Board(boardConf);
 
-        List<SynchBox<Runnable>> workBuffer = new ArrayList<SynchBox<Runnable>>(N_WORKERS);
+        List<SynchCell<Runnable>> workBuffer = new ArrayList<SynchCell<Runnable>>(N_WORKERS);
         LatchImpl workLatch = new LatchImpl(N_WORKERS);
 
         for (int i = 0; i < N_WORKERS; i++) {
-            SynchBox<Runnable> workBox = new SynchBoxImpl<Runnable>();
-            workBuffer.add(workBox);
-            SimulationWorker worker = new SimulationWorker(workBox, workLatch, board.getState());
+            SynchCell<Runnable> workCell = new SynchCellImpl<Runnable>();
+            workBuffer.add(workCell);
+            SimulationWorker worker = new SimulationWorker(workCell, workLatch);
             worker.start();
         }
 
