@@ -196,4 +196,67 @@ This $8.2\%$ structural bottleneck accurately explains why the efficiency curve 
 
 \section{Program Verification and Model Checking}
 
+This section reports the formal verification of the simulation logic with Java PathFinder (JPF), an explicit-state model checker that explores all the thread interleavings of a Java program. The goal was to confirm the absence of data races and deadlocks in both concurrent architectures.
+
+\subsection{Methodology and Verification Target}
+
+JPF supports only Java 11 and does not scale to arbitrary program sizes, because its state space explodes with the number of threads and synchronisation events. Direct verification of the production code was not possible. A minimal variant \texttt{pooolThreadOrientedJpf} was therefore built, faithful to \texttt{pooolThreadOriented} except where strictly required.
+
+The view, the keyboard controller, the board observers, and the \texttt{BotUpdater} were removed, because they do not take part in the synchronisation pattern under analysis. \texttt{BotUpdater} also relied on \texttt{java.util.Random}, which JPF treats as an unbounded non-deterministic choice generator. \texttt{Record} declarations and \texttt{switch} expressions were rewritten in pre-Java 14 form. The lambdas inside \texttt{distributeWork} were replaced with anonymous inner classes, because JPF historically does not handle \texttt{invokedynamic} reliably. A bounded counter \texttt{maxTicks} was added to the coordinator to guarantee termination, as JPF requires the program to halt before it can certify any property. A constant tick interval replaced \texttt{System.currentTimeMillis()}, which under JPF does not advance.
+
+The base configuration used \texttt{MinimalBoardConf}, two workers, and two ticks. The listener \texttt{PreciseRaceDetector} was active in addition to the default \texttt{NotDeadlockedProperty}.
+
+\subsection{Race Condition on Ball Position}
+
+The first violation raised by JPF was a data race on \texttt{Ball.pos}. The opening lines of \texttt{Ball.resolveCollision} accessed \texttt{a.pos} and \texttt{b.pos} as direct fields, while the writes always go through the \texttt{synchronized} accessors of \texttt{Ball}. Under the Java Memory Model this counts as a race, and \texttt{PreciseRaceDetector} flagged it. The fix was to read \texttt{pos} and \texttt{radius} through the existing getters at the entry of the method, so that every access happens under the same monitor as the writes. The same change was backported to the production \texttt{pooolThreadOriented} and \texttt{pooolTaskOriented}.
+
+\subsection{Shutdown Deadlock and Channel Closure}
+
+After the race fix, JPF detected a deadlock: worker threads blocked in \texttt{SynchCell.get()} with the coordinator already \texttt{TERMINATED}. The cause is a race between the worker's check of \texttt{gameState.isGameOver()} at the top of its loop and the next call to \texttt{workBox.get()}. When a ball falls into a hole, the worker processing it sets \texttt{gameOver = true}. The coordinator then exits its main loop and stops enqueueing work. Any other worker that had passed the \texttt{isGameOver()} check just before now blocks in \texttt{wait()}, because the only producer for that queue is gone. The defect is structural: coordinator and worker consult the same flag to decide termination, without coordination.
+
+The fix replaced the shared-flag shutdown with a channel-closure pattern. \texttt{SynchCell} gained a \texttt{synchronized end()} method, and \texttt{get()} now returns \texttt{Optional<T>}, yielding \texttt{Optional.empty()} once closed. The worker loop became a plain consumer that exits on the empty value and no longer reads \texttt{gameState}. The coordinator calls \texttt{end()} on every work box as its last action, removing the race window by construction. The same change was backported to the production \texttt{pooolThreadOriented}.
+
+\subsection{Scenario-based Verification}
+
+The \texttt{MinimalBoardConf} configuration exercises only one termination branch of the coordinator, namely loop exit via \texttt{maxTicks}. To cover the remaining branches and other concurrency paths, six dedicated configurations were authored under \texttt{scenarios/}, each isolating a distinct case:
+
+\begin{itemize}
+    \item \textbf{\texttt{HumanFallsImmediatelyJpf}:} positions the human ball inside a hole at tick one, so that termination is triggered by a worker through \texttt{endGame()}.
+    \item \textbf{\texttt{AllSmallBallsFallTogetherJpf}:} positions both small balls inside the holes, so that termination is triggered by the coordinator through \texttt{setEndGame()} when \texttt{smallBalls.isEmpty()} becomes true.
+    \item \textbf{\texttt{BoundaryCollisionJpf}:} places two small balls at distance equal to the sum of their radii, exercising the strict inequality in the collision predicate.
+    \item \textbf{\texttt{ActualCollisionJpf}:} places the same two balls overlapping with opposing velocities, so that \texttt{resolveCollision} executes its full body and validates the getter fix under concurrent reads and writes from a second worker processing other pairs.
+    \item \textbf{\texttt{HumanAndBotFallSameTickJpf}:} places the special balls inside two distinct holes with an odd total ball count, so that \texttt{distributeLinearWork} schedules them on different workers, producing concurrent calls to \texttt{endGame}.
+    \item \textbf{\texttt{MoreWorkersThanBallsJpf}:} configures more workers than balls, leaving one worker idle in \texttt{workBox.get()} for the entire simulation.
+\end{itemize}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}lcrrr@{}}
+        \toprule
+        \textbf{Scenario} & \textbf{Outcome} & \textbf{Time} & \textbf{States} & \textbf{End} \\ \midrule
+        \texttt{PooolJpf} (base)           & no errors    & 26:16   & 6\,947\,640 & 968 \\
+        \texttt{HumanFallsImmediately}     & no errors    & 05:17   & 1\,259\,485 & 968 \\
+        \texttt{AllSmallBallsFallTogether} & no errors    & 05:16   & 1\,738\,773 & 968 \\
+        \texttt{BoundaryCollision}         & no errors    & 17:07   & 5\,485\,810 & 968 \\
+        \texttt{ActualCollision}           & no errors    & 16:13   & 5\,528\,612 & 968 \\
+        \texttt{HumanAndBotFallSameTick}   & no errors    & 03:44   & 1\,297\,036 & 1\,936 \\
+        \texttt{MoreWorkersThanBalls}      & JPF OOM      & 7:34:32 & 93\,949\,952 & 76 \\
+        \bottomrule
+    \end{tabular}
+    \caption{JPF verification results on \texttt{pooolThreadOrientedJpf}. Two workers and two ticks, with \texttt{PreciseRaceDetector} as listener and \texttt{NotDeadlockedProperty} active by default. Times are wall clock.}
+    \label{tab:jpf_results}
+\end{table}
+
+All scenarios completed without violations, except \texttt{MoreWorkersThanBallsJpf}. That run saturated the 2 GB heap of JPF after seven and a half hours and around 94 million new states. A second attempt with three workers and fewer balls also failed to terminate within practical time. The outcome is an empirical limit of the verifier on this workload. The state space scales with the number of worker threads, and above three workers it exceeds the resources of commodity hardware. The property tested by this scenario, the correct release of an idle worker by \texttt{end()}, is already covered by the other configurations, since every worker spends most of its time blocked in \texttt{workBox.get()} between phases.
+
+One result is worth highlighting. \texttt{HumanAndBotFallSameTickJpf} terminated with \texttt{end = 1\,936}, exactly twice the value observed in all other scenarios. The doubling is direct evidence that JPF explored both orderings of the concurrent \texttt{endGame()} calls: human winning the race against bot winning the race, each producing a different \texttt{gameResult} string. The result confirms that the \texttt{synchronized} declaration on \texttt{GameState.endGame} preserves consistency under both orderings, with no intermediate or corrupted state visible.
+
+A separate run of the base configuration with the \texttt{DeadlockAnalyzer} listener produced the same state count, end count, and maximum depth as the corresponding \texttt{PreciseRaceDetector} run. This confirms that the two listeners do not alter the explored state space. Deadlock detection is performed by the default \texttt{NotDeadlockedProperty}, no matter which listener is active. The listener only enriches the diagnostic output in case of violation. Repeating the entire scenario suite with \texttt{DeadlockAnalyzer} was therefore omitted as redundant.
+
+\subsection{Task-oriented Variant and Modelling Limits of JPF}
+
+An analogous variant \texttt{pooolTaskOrientedJpf} was built to apply the same methodology to the executor-based architecture. A similar shutdown defect was expected, since \texttt{Executors.newFixedThreadPool} creates non-daemon threads that the original coordinator never shuts down. JPF refused to execute the variant. At the first \texttt{exec.invokeAll(work)} it raised \texttt{NoSuchMethodError} on \texttt{java.lang.invoke.JPFFieldVarHandle.setRelease} and terminated after six exploration steps. The reason is internal to JPF. The verifier runs on a Java 11 host JVM, but it interprets the bytecode of the program inside its own internal JVM, frozen at version 8 (2014). That internal JVM does not model \texttt{VarHandle}, a primitive introduced in Java 9 (2017), and therefore cannot handle the modern implementation of \texttt{FutureTask} and \texttt{AbstractExecutorService}.
+
+The defect was therefore confirmed by semantic reasoning. A single \texttt{exec.shutdown()} call at the end of the coordinator's \texttt{run()} was added to the production \texttt{pooolTaskOriented}.
+
 \end{document}
