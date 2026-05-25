@@ -1,0 +1,40 @@
+package pcd.pooolThreadOrientedJpf.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MinimalBoardConf implements BoardConf {
+
+    @Override
+    public Ball getHumanBall() {
+        return new Ball(new P2d(-0.6, 0), 0.06, 1, new V2d(0, 0.5), BallType.HUMAN);
+    }
+
+    @Override
+    public Ball getBotBall() {
+        return new Ball(new P2d(0.6, 0), 0.06, 1, new V2d(0, 0.5), BallType.BOT);
+    }
+
+    @Override
+    public List<Ball> getSmallBalls() {
+        List<Ball> balls = new ArrayList<Ball>();
+        Ball b1 = new Ball(new P2d(0, 0.5), 0.05, 0.75, new V2d(0, 0));
+        Ball b2 = new Ball(new P2d(0.05, 0.55), 0.025, 0.25, new V2d(0, 0));
+        balls.add(b1);
+        balls.add(b2);
+        return balls;
+    }
+
+    @Override
+    public Boundary getBoardBoundary() {
+        return new Boundary(-1.5, -1.0, 1.5, 1.0);
+    }
+
+    @Override
+    public List<Hole> getHoles() {
+        double radius = 0.2;
+        return List.of(
+                new Hole(new P2d(-1.5, 1.0), radius),
+                new Hole(new P2d(1.5, 1.0), radius));
+    }
+}
