@@ -52,6 +52,7 @@ public class SimulationCoordinator extends Thread {
 		for (var o : observers) {
 			o.gameOver(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec, gameState.getGameResult());
 		}
+		exec.shutdown();
 	}
 
 	private void updateState(long dt) {
