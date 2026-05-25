@@ -1,4 +1,4 @@
-target = pcd.pooolThreadOrientedJpf.PooolJpf
+target = pcd.pooolThreadOrientedJpf.scenarios.MoreWorkersThanBallsJpf
 
 classpath = /pcd-jpf/target/classes
 
