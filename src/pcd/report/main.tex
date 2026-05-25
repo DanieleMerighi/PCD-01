@@ -39,6 +39,42 @@
 %\end{itemize}
 
 \section{System Architecture and Architectural Design}
+This section describes the high level structure of our proposed solution, focusing on the elements of concurrent programming, i.e. the active and passive components at play and their interactions. Visual formalisms, specifically Petri nets, are also used to demonstrate the overall behavior and allow for preliminary model checking.
+
+\subsection{Active Components}
+The concurrent program's execution involves instances of five active classes, each encapsulating a designated control flow.
+\begin{itemize}
+\item \texttt{KeyboardController}, responsible for the execution of issued keyboard commands, keeping the Graphical User Interface responsive.
+\item \texttt{BotUpdater}, periodically kicking the bot player's ball.
+\item \texttt{SimulationCoordinator}, distributing the computation for the  physics simulation.
+\item \texttt{SimulationWorker}, replaced simply by \texttt{java.lang.Thread} and managed by the Executor framework in the Task-Oriented version. In both cases, one or more instances may be active during the game's runtime.
+\item \texttt{java.awt.EventDispatchThread}, provided by Java Swing.
+\end{itemize}
+
+\subsection{Monitors}
+All active components are implemented to be pure, meaning that interactions between them happen through the use of synchronized passive components. Our solution makes use of three such classes.
+\begin{itemize}
+\item \texttt{BoundedBuffer}, used for the keyboard command buffer.
+\item \texttt{Latch}, handling synchronization between the simulation coordinator and workers in the Thread-Oriented version.
+\item \texttt{SynchCell}, used to assign work to individual workers in the Thread-Oriented version.
+\end{itemize}
+Of these, \texttt{BoundedBuffer} and \texttt{Latch} are implemented following the standard semantics, while the \texttt{SynchCell} features an additional \texttt{end()} method, which is used to signal that no more values will be put into the cell. This also wakes up all threads that happen to be blocked on the \texttt{get()} method, causing an empty \texttt{Optional} to be returned.
+
+\subsection{Behavior Overview}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/petri_net_1_edt_kc_bu.png}
+    \caption{TODO}
+    \label{fig:petri_net_1_edt_kc_bu}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/petri_net_2_sc_sw.png}
+    \caption{TODO}
+    \label{fig:petri_net_2_sc_sw}
+\end{figure}
 
 \section{Performance Evaluation}
 This section evaluates the empirical performance gains of the concurrent implementations compared to the baseline sequential approach under heavy workloads.
