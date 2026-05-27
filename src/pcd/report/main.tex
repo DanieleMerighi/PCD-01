@@ -30,7 +30,7 @@
 
 \section{Problem Analysis}
 
-This section provides a detailed analysis of the \texttt{Poool} game from a concurrent programming perspective. The main computational challenge resides in the simulation loop, which must continuously handle physics updates, boundary collisions, and elastic collisions among thousands of small balls.
+This section provides an analysis of the \texttt{Poool} game from a concurrent programming perspective. The main computational challenge resides in the simulation loop, which must continuously handle physics updates, boundary collisions, and elastic collisions among thousands of small balls.
 
 The primary bottlenecks identified are:
 \begin{itemize}
@@ -215,7 +215,7 @@ This section reports the formal verification of the simulation logic with Java P
 
 JPF supports only Java 11 and does not scale to arbitrary program sizes, because its state space explodes with the number of threads and synchronisation events. Direct verification of the production code was not possible. A minimal variant \texttt{pooolThreadOrientedJpf} was therefore built, faithful to \texttt{pooolThreadOriented} except where strictly required.
 
-The view, the keyboard controller, the board observers, and the \texttt{BotUpdater} were removed, because they do not take part in the synchronisation pattern under analysis. \texttt{BotUpdater} also relied on \texttt{java.util.Random}, which JPF treats as an unbounded non-deterministic choice generator. \texttt{Record} declarations and \texttt{switch} expressions were rewritten in pre-Java 14 form. The lambdas inside \texttt{distributeWork} were replaced with anonymous inner classes, because JPF historically does not handle \texttt{invokedynamic} reliably. A bounded counter \texttt{maxTicks} was added to the coordinator to guarantee termination, as JPF requires the program to halt before it can certify any property. A constant tick interval replaced \texttt{System.currentTimeMillis()}, which under JPF does not advance.
+The view, the keyboard controller, the board observers, and the \texttt{BotUpdater} were removed to keep the state space tractable for JPF. \texttt{BotUpdater} also relied on \texttt{java.util.Random}, which JPF treats as an unbounded non-deterministic choice generator. \texttt{Record} declarations and \texttt{switch} expressions were rewritten in pre-Java 14 form. The lambdas inside \texttt{distributeWork} were replaced with anonymous inner classes, because JPF historically does not handle \texttt{invokedynamic} reliably. A bounded counter \texttt{maxTicks} was added to the coordinator to guarantee termination, as JPF requires the program to halt before it can certify any property. A constant tick interval replaced \texttt{System.currentTimeMillis()}, which under JPF does not advance.
 
 The base configuration used \texttt{MinimalBoardConf}, two workers, and two ticks. The listener \texttt{PreciseRaceDetector} was active in addition to the default \texttt{NotDeadlockedProperty}.
 
@@ -225,9 +225,9 @@ The first violation raised by JPF was a data race on \texttt{Ball.pos}. The open
 
 \subsection{Shutdown Deadlock and Channel Closure}
 
-After the race fix, JPF detected a deadlock: worker threads blocked in \texttt{SynchCell.get()} with the coordinator already \texttt{TERMINATED}. The cause is a race between the worker's check of \texttt{gameState.isGameOver()} at the top of its loop and the next call to \texttt{workBox.get()}. When a ball falls into a hole, the worker processing it sets \texttt{gameOver = true}. The coordinator then exits its main loop and stops enqueueing work. Any other worker that had passed the \texttt{isGameOver()} check just before now blocks in \texttt{wait()}, because the only producer for that queue is gone. The defect is structural: coordinator and worker consult the same flag to decide termination, without coordination.
+After the race fix, JPF detected a deadlock: worker threads blocked in \texttt{SynchCell.get()} with the coordinator already \texttt{TERMINATED}. The cause is a race between the worker's check of \texttt{gameState.isGameOver()} at the top of its loop and the next call to \texttt{SynchCell.get()}. When a ball falls into a hole, the worker processing it sets \texttt{gameOver = true}. The coordinator then exits its main loop and stops enqueueing work. Any other worker that had passed the \texttt{isGameOver()} check just before now blocks in \texttt{wait()}, because the only producer for that queue is gone. The defect is structural: coordinator and worker consult the same flag to decide termination, without coordination.
 
-The fix replaced the shared-flag shutdown with a channel-closure pattern. \texttt{SynchCell} gained a \texttt{synchronized end()} method, and \texttt{get()} now returns \texttt{Optional<T>}, yielding \texttt{Optional.empty()} once closed. The worker loop became a plain consumer that exits on the empty value and no longer reads \texttt{gameState}. The coordinator calls \texttt{end()} on every work box as its last action, removing the race window by construction. The same change was backported to the production \texttt{pooolThreadOriented}.
+The fix replaced the shared-flag shutdown with a channel-closure pattern. \texttt{SynchCell} gained a \texttt{synchronized end()} method, and \texttt{get()} now returns \texttt{Optional<T>}, yielding \texttt{Optional.empty()} once closed. The worker loop became a plain consumer that exits on the empty value and no longer reads \texttt{gameState}. The coordinator calls \texttt{end()} on every synchCell as its last action, removing the race window by construction. The same change was backported to the production \texttt{pooolThreadOriented}.
 
 \subsection{Scenario-based Verification}
 
@@ -239,7 +239,7 @@ The \texttt{MinimalBoardConf} configuration exercises only one termination branc
     \item \textbf{\texttt{BoundaryCollisionJpf}:} places two small balls at distance equal to the sum of their radii, exercising the strict inequality in the collision predicate.
     \item \textbf{\texttt{ActualCollisionJpf}:} places the same two balls overlapping with opposing velocities, so that \texttt{resolveCollision} executes its full body and validates the getter fix under concurrent reads and writes from a second worker processing other pairs.
     \item \textbf{\texttt{HumanAndBotFallSameTickJpf}:} places the special balls inside two distinct holes with an odd total ball count, so that \texttt{distributeLinearWork} schedules them on different workers, producing concurrent calls to \texttt{endGame}.
-    \item \textbf{\texttt{MoreWorkersThanBallsJpf}:} configures more workers than balls, leaving one worker idle in \texttt{workBox.get()} for the entire simulation.
+    \item \textbf{\texttt{MoreWorkersThanBallsJpf}:} configures more workers than balls, leaving one worker idle in \texttt{SynchCell.get()} for the entire simulation.
 \end{itemize}
 
 \begin{table}[H]
