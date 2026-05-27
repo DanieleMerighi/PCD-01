@@ -122,7 +122,7 @@ This section evaluates the empirical performance gains of the concurrent impleme
 \subsection{Methodology}
 Testing was conducted utilising the \texttt{MassiveBoardConf} configuration (4500 entities) to generate a compute-intensive workload. To ensure measurement accuracy, the physics and collision resolution logic \texttt{updateState()} was isolated. The GUI was disabled to eliminate the interference of the sequential Swing event dispatch thread.
 
-Execution times were recorded using \texttt{System.nanoTime()}. Each configuration executed a 1000-update warm-up phase to allow the JVM Just-In-Time (JIT) compiler and Garbage Collector to stabilise, mitigating dynamic compilation overhead as described in "Performance of Concurrent Programs" slides. The following 2000 updates were measured, and the average execution time was calculated across 5 independent runs per configuration.
+Execution times were recorded using \texttt{System.nanoTime()}. Each configuration executed a 1000-update warm-up phase to allow the JVM Just-In-Time (JIT) compiler and Garbage Collector to stabilise, mitigating dynamic compilation overhead as described in ``Performance of Concurrent Programs'' slides. The following 2000 updates were measured, and the average execution time was calculated across 5 independent runs per configuration.
 
 The baseline sequential execution time ($T_{seq}$) averaged 105.65ms per frame for the task version and 106.17ms for the thread one. The host system for the benchmark featured 12 available logical processors ($N_{cpu} = 12$).
 
@@ -133,9 +133,10 @@ To evaluate how much the concurrent version improves upon the sequential one, Sp
     \centering
     \begin{tabular}{@{}lcccc@{}}
         \toprule
-        \textbf{Workers ($N$)} & \textbf{Task Time (ms)} & \textbf{Thread Time (ms)} & \textbf{Task Speedup} & \textbf{Thread Speedup} \\ \midrule
+        \textbf{Workers} & \textbf{Task Time} & \textbf{Thread Time} & \textbf{Task Speedup} & \textbf{Thread Speedup} \\
+        & \textbf{(ms)} & \textbf{(ms)} \\ \midrule
         1 & 105.65 & 106.17 & 1.00x & 1.00x \\
-        2 & 55.96 & 56.76 & ,1.89x & 1.87x \\
+        2 & 55.96 & 56.76 & 1.89x & 1.87x \\
         4 & 30.48 & 30.92 & 3.47x & 3.43x \\
         8 & 23.11 & 23.51 & 4.57x & 4.52x \\
         \textbf{12} & \textbf{16.74} & \textbf{18.31} & \textbf{6.31x} & \textbf{5.80x} \\
@@ -154,7 +155,7 @@ To assess how effectively the program exploits available cores, Efficiency ($E$)
     \centering
     \begin{tabular}{@{}lcc@{}}
         \toprule
-        \textbf{Workers ($N$)} & \textbf{Task Efficiency} & \textbf{Thread Efficiency} \\ \midrule
+        \textbf{Workers} & \textbf{Task Efficiency} & \textbf{Thread Efficiency} \\ \midrule
         1 & 1.00 & 1.00 \\
         2 & 0.94 & 0.94 \\
         4 & 0.87 & 0.86 \\
@@ -197,7 +198,7 @@ $$ S = \frac{1}{1 - P + \frac{P}{N}} \implies 6.31 = \frac{1}{1 - P + \frac{P}{1
 Solving for $P = \frac{5.31 \times 12}{6.31 \times 11}$, it is determined that the highly parallelizable portion of the program is $P \approx 0.918$ ($91.8\%$).
 
 \begin{itemize}
-    \item \textbf{The Parallelizable $91.8\%$:} This vast majority of execution time is successfully distributed across the worker pool. It comprises the $O(\frac{n^2}{2})$ nested loop evaluating elastic collisions and the linear passes updating entity positions and resolving boundary bounces.
+    \item \textbf{The Parallelizable $91.8\%$:} This vast majority of execution time is successfully distributed across the worker pool. It comprises the $O(n^2)$ nested loop evaluating elastic collisions and the linear passes updating entity positions and resolving boundary bounces.
     \item \textbf{The Sequential $8.2\%$ (The Bottleneck):} This unscalable fraction prevents the application from reaching ideal efficiency. Code analysis of the \texttt{Simulation Coordinator} isolates this bottleneck to:
     \begin{itemize}
         \item \textbf{Barrier Synchronization Overhead:} The coordinating thread must block and wait for all workers to complete their discrete tasks via \texttt{invokeAll(work)} or \texttt{Latch.await()} before proceeding to the next frame computation step.
