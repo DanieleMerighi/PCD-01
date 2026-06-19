@@ -5,12 +5,12 @@ public class Ball {
 	private static final double FRICTION_FACTOR = 0.25; 	/* 0 minimum */
 	private static final double RESTITUTION_FACTOR = 1;
 
-    private P2d pos;
-    private V2d vel;
+    private volatile P2d pos;
+    private volatile V2d vel;
     private final double radius;
     private final double mass;
 	private final BallType type;
-    private BallType hitCredit;
+    private volatile BallType hitCredit;
 
     public Ball(P2d pos, double radius, double mass, V2d vel, BallType type) {
        this.pos = pos;
@@ -25,7 +25,7 @@ public class Ball {
 		this(pos, radius, mass, vel, BallType.SMALL_BALL);
 	}
 
-    public synchronized void updateState(long dt, Board ctx) {
+    public void updateState(long dt, Board ctx) {
         double speed = vel.abs();
         double dt_scaled = dt*0.001;
     	if (speed > 0.001) {
@@ -70,69 +70,81 @@ public class Ball {
 
     	/* check if there is a collision */
 
-    	P2d aPos = a.getPos();
-    	P2d bPos = b.getPos();
-    	double dx   = bPos.x() - aPos.x();
-        double dy   = bPos.y() - aPos.y();
-        double dist = Math.hypot(dx, dy);
-        double minD = a.getRadius() + b.getRadius();
+		double dx   = b.pos.x() - a.pos.x();
+		double dy   = b.pos.y() - a.pos.y();
+		double dist = Math.hypot(dx, dy);
+		double minD = a.radius + b.radius;
         
         /* 
          * There is a collision if the distance between the two balls is less than the sum of the radii 
          * 
          */
         if (dist < minD && dist > 1e-6) {
+			synchronized(a) {
+				synchronized(b) {
+					dx   = b.pos.x() - a.pos.x();
+					dy   = b.pos.y() - a.pos.y();
+					dist = Math.hypot(dx, dy);
+					minD = a.radius + b.radius;
 
-	        /* 
-	         * Collision case - what to do:
-	         * 
-	         * 1) solve overlaps, moving balls 
-	         * 2) update velocities
-	         * 
-	         */
-	        
-        	/* dvn = V2d(nx,ny) = dv unit vector */
-    
-        	double nx = dx / dist;
-	        double ny = dy / dist;
-	
-	        /* 
-	         * 
-	         * Update positions to solve overlaps, moving balls along dvn
-	         * - the displacements is proportional to the mass
-	         * 
-	         */
-	        double overlap = minD - dist;
-	        double totalM  = a.getMass() + b.getMass();
-	
-	        double a_factor = overlap * (b.getMass() / totalM);
-	        double a_deltax = nx * a_factor; 
-	        double a_deltay = ny * a_factor; 
-	        
-	        a.setPos(new P2d(a.getPos().x() - a_deltax, a.getPos().y() - a_deltay));
-	        
-	        double b_factor = overlap * (a.getMass() / totalM);
-	        double b_deltax = nx * b_factor; 
-	        double b_deltay = ny * b_factor; 
-	
-	        b.setPos(new P2d(b.getPos().x() + b_deltax, b.getPos().y() + b_deltay));
-	
-	        /* Update velocities  */
-	        
-	        /* relative speed along the normal vector*/
-	
-	        double dvx = b.getVel().x() - a.getVel().x();
-	        double dvy = b.getVel().y() - a.getVel().y();
-	        double dvn = dvx * nx + dvy * ny;
-	
-	        if (dvn <= 0) { /* if not already separating, update velocities */
-	        	double imp = -(1 + RESTITUTION_FACTOR) * dvn / (1.0/a.getMass() + 1.0/b.getMass());        
-	        	a.setVel(new V2d(a.getVel().x() - (imp / a.getMass()) * nx, a.getVel().y() - (imp / a.getMass()) * ny));
-	        	b.setVel(new V2d(b.getVel().x() + (imp / b.getMass()) * nx, b.getVel().y() + (imp / b.getMass()) * ny));
-	        }
+					/*
+					 * There is a collision if the distance between the two balls is less than the sum of the radii
+					 *
+					 */
+					if (dist < minD && dist > 1e-6) {
+						/*
+						 * Collision case - what to do:
+						 *
+						 * 1) solve overlaps, moving balls
+						 * 2) update velocities
+						 *
+						 */
 
-			a.setHitCredit(b.getType());
-			b.setHitCredit(a.getType());
+						/* dvn = V2d(nx,ny) = dv unit vector */
+
+						double nx = dx / dist;
+						double ny = dy / dist;
+
+						/*
+						 *
+						 * Update positions to solve overlaps, moving balls along dvn
+						 * - the displacements is proportional to the mass
+						 *
+						 */
+						double overlap = minD - dist;
+						double totalM = a.getMass() + b.getMass();
+
+						double a_factor = overlap * (b.getMass() / totalM);
+						double a_deltax = nx * a_factor;
+						double a_deltay = ny * a_factor;
+
+						a.setPos(new P2d(a.getPos().x() - a_deltax, a.getPos().y() - a_deltay));
+
+						double b_factor = overlap * (a.getMass() / totalM);
+						double b_deltax = nx * b_factor;
+						double b_deltay = ny * b_factor;
+
+						b.setPos(new P2d(b.getPos().x() + b_deltax, b.getPos().y() + b_deltay));
+
+						/* Update velocities  */
+
+						/* relative speed along the normal vector*/
+
+						double dvx = b.getVel().x() - a.getVel().x();
+						double dvy = b.getVel().y() - a.getVel().y();
+						double dvn = dvx * nx + dvy * ny;
+
+						if (dvn <= 0) { /* if not already separating, update velocities */
+							double imp = -(1 + RESTITUTION_FACTOR) * dvn / (1.0 / a.getMass() + 1.0 / b.getMass());
+							a.setVel(new V2d(a.getVel().x() - (imp / a.getMass()) * nx, a.getVel().y() - (imp / a.getMass()) * ny));
+							b.setVel(new V2d(b.getVel().x() + (imp / b.getMass()) * nx, b.getVel().y() + (imp / b.getMass()) * ny));
+						}
+
+						a.setHitCredit(b.getType());
+						b.setHitCredit(a.getType());
+					}
+				}
+			}
         }
     }
 
@@ -154,39 +166,39 @@ public class Ball {
 		}
     }
     
-    public synchronized P2d getPos() {
+    public P2d getPos() {
     	return pos;
     }
 
-	public synchronized void setPos(P2d pos) {
+	public void setPos(P2d pos) {
 		this.pos = pos;
 	}
     
-    public synchronized double getMass() {
+    public double getMass() {
     	return mass;
     }
     
-    public synchronized V2d getVel() {
+    public V2d getVel() {
     	return vel;
     }
 
-	public synchronized void setVel(V2d vel) {
+	public void setVel(V2d vel) {
 		this.vel = vel;
 	}
     
-    public synchronized double getRadius() {
+    public double getRadius() {
     	return radius;
     }
 
-	public synchronized BallType getType() {
+	public BallType getType() {
 		return type;
 	}
 
-    public synchronized BallType getHitCredit() {
+    public BallType getHitCredit() {
         return this.hitCredit;
     }
 
-    public synchronized void setHitCredit(BallType hitCredit) {
+    public void setHitCredit(BallType hitCredit) {
         this.hitCredit = hitCredit;
     }
 
