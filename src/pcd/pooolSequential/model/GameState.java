@@ -22,16 +22,16 @@ public class GameState {
         this.smallBalls = allBalls.subList(2, allBalls.size()); // Dynamic view
     }
 
-    public synchronized List<Ball> getSmallBalls() {
-        return List.copyOf(smallBalls);
-    }
-
     public synchronized List<Ball> getAllBalls() {
         return List.copyOf(allBalls);
     }
 
     public synchronized void removeSmallBall(Ball ball) {
         smallBalls.remove(ball);
+    }
+
+    public synchronized boolean isSmallBallEmpty() {
+        return smallBalls.isEmpty();
     }
 
     public synchronized int getHumanScore() {

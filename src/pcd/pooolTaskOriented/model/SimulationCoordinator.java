@@ -67,8 +67,7 @@ public class SimulationCoordinator extends Thread {
 		if (gameState.isGameOver())
 			return;
 
-		var smallBalls = gameState.getSmallBalls();
-		if (smallBalls.isEmpty()) {
+		if (gameState.isSmallBallEmpty()) {
 			setEndGame();
 			return;
 		}

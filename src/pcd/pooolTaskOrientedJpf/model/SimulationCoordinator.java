@@ -55,8 +55,7 @@ public class SimulationCoordinator extends Thread {
             return;
         }
 
-        List<Ball> smallBalls = gameState.getSmallBalls();
-        if (smallBalls.isEmpty()) {
+        if (gameState.isSmallBallEmpty()) {
             setEndGame();
             return;
         }
