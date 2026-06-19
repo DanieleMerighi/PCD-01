@@ -80,8 +80,8 @@ public class Ball {
          * 
          */
         if (dist < minD && dist > 1e-6) {
-			Ball first = a.hashCode() < b.hashCode() ? a : b;
-			Ball second = a.hashCode() < b.hashCode() ? b : a;
+			Ball first = System.identityHashCode(a) < System.identityHashCode(b) ? a : b;
+			Ball second = System.identityHashCode(a) < System.identityHashCode(b) ? b : a;
 
 			synchronized (first) {
 				synchronized (second) {
@@ -93,9 +93,25 @@ public class Ball {
 
 					// Si esegue la modifica solo se la collisione esiste ancora
 					if (dist < minD && dist > 1e-6) {
+						/*
+						 * Collision case - what to do:
+						 *
+						 * 1) solve overlaps, moving balls
+						 * 2) update velocities
+						 *
+						 */
+
+						/* dvn = V2d(nx,ny) = dv unit vector */
+
 						double nx = dx / dist;
 						double ny = dy / dist;
 
+						/*
+						 *
+						 * Update positions to solve overlaps, moving balls along dvn
+						 * - the displacements is proportional to the mass
+						 *
+						 */
 						double overlap = minD - dist;
 						double totalM = a.mass + b.mass;
 
@@ -109,11 +125,15 @@ public class Ball {
 						double b_deltay = ny * b_factor;
 						b.pos = new P2d(b.pos.x() + b_deltax, b.pos.y() + b_deltay);
 
+						/* Update velocities  */
+
+						/* relative speed along the normal vector*/
+
 						double dvx = b.vel.x() - a.vel.x();
 						double dvy = b.vel.y() - a.vel.y();
 						double dvn = dvx * nx + dvy * ny;
 
-						if (dvn <= 0) {
+						if (dvn <= 0) { /* if not already separating, update velocities */
 							double imp = -(1 + RESTITUTION_FACTOR) * dvn / (1.0 / a.mass + 1.0 / b.mass);
 							a.vel = new V2d(a.vel.x() - (imp / a.mass) * nx, a.vel.y() - (imp / a.mass) * ny);
 							b.vel = new V2d(b.vel.x() + (imp / b.mass) * nx, b.vel.y() + (imp / b.mass) * ny);
