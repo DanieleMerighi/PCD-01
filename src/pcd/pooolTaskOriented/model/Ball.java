@@ -83,83 +83,59 @@ public class Ball {
 			Ball first = a.hashCode() < b.hashCode() ? a : b;
 			Ball second = a.hashCode() < b.hashCode() ? b : a;
 
-			synchronized(first) {
-				synchronized(second) {
-					dx   = b.pos.x() - a.pos.x();
-					dy   = b.pos.y() - a.pos.y();
+			synchronized (first) {
+				synchronized (second) {
+
+					// Double-Checked Locking: si ricalcola sotto lock
+					dx = b.pos.x() - a.pos.x();
+					dy = b.pos.y() - a.pos.y();
 					dist = Math.hypot(dx, dy);
-					minD = a.radius + b.radius;
 
-					/*
-					 * There is a collision if the distance between the two balls is less than the sum of the radii
-					 *
-					 */
+					// Si esegue la modifica solo se la collisione esiste ancora
 					if (dist < minD && dist > 1e-6) {
-						/*
-						 * Collision case - what to do:
-						 *
-						 * 1) solve overlaps, moving balls
-						 * 2) update velocities
-						 *
-						 */
-
-						/* dvn = V2d(nx,ny) = dv unit vector */
-
 						double nx = dx / dist;
 						double ny = dy / dist;
 
-						/*
-						 *
-						 * Update positions to solve overlaps, moving balls along dvn
-						 * - the displacements is proportional to the mass
-						 *
-						 */
 						double overlap = minD - dist;
-						double totalM = a.getMass() + b.getMass();
+						double totalM = a.mass + b.mass;
 
-						double a_factor = overlap * (b.getMass() / totalM);
+						double a_factor = overlap * (b.mass / totalM);
 						double a_deltax = nx * a_factor;
 						double a_deltay = ny * a_factor;
+						a.pos = new P2d(a.pos.x() - a_deltax, a.pos.y() - a_deltay);
 
-						a.setPos(new P2d(a.getPos().x() - a_deltax, a.getPos().y() - a_deltay));
-
-						double b_factor = overlap * (a.getMass() / totalM);
+						double b_factor = overlap * (a.mass / totalM);
 						double b_deltax = nx * b_factor;
 						double b_deltay = ny * b_factor;
+						b.pos = new P2d(b.pos.x() + b_deltax, b.pos.y() + b_deltay);
 
-						b.setPos(new P2d(b.getPos().x() + b_deltax, b.getPos().y() + b_deltay));
-
-						/* Update velocities  */
-
-						/* relative speed along the normal vector*/
-
-						double dvx = b.getVel().x() - a.getVel().x();
-						double dvy = b.getVel().y() - a.getVel().y();
+						double dvx = b.vel.x() - a.vel.x();
+						double dvy = b.vel.y() - a.vel.y();
 						double dvn = dvx * nx + dvy * ny;
 
-						if (dvn <= 0) { /* if not already separating, update velocities */
-							double imp = -(1 + RESTITUTION_FACTOR) * dvn / (1.0 / a.getMass() + 1.0 / b.getMass());
-							a.setVel(new V2d(a.getVel().x() - (imp / a.getMass()) * nx, a.getVel().y() - (imp / a.getMass()) * ny));
-							b.setVel(new V2d(b.getVel().x() + (imp / b.getMass()) * nx, b.getVel().y() + (imp / b.getMass()) * ny));
+						if (dvn <= 0) {
+							double imp = -(1 + RESTITUTION_FACTOR) * dvn / (1.0 / a.mass + 1.0 / b.mass);
+							a.vel = new V2d(a.vel.x() - (imp / a.mass) * nx, a.vel.y() - (imp / a.mass) * ny);
+							b.vel = new V2d(b.vel.x() + (imp / b.mass) * nx, b.vel.y() + (imp / b.mass) * ny);
 						}
 
-						a.setHitCredit(b.getType());
-						b.setHitCredit(a.getType());
+						a.hitCredit = b.type;
+						b.hitCredit = a.type;
 					}
 				}
 			}
-        }
-    }
+		}
+	}
 
-    public static void resolveHole(Ball ball, Hole hole, GameState gameState) {
-        var dx = ball.getPos().x() - hole.pos().x();
-        var dy = ball.getPos().y() - hole.pos().y();
-        if (Math.hypot(dx, dy) < hole.radius()) {
+	public static void resolveHole(Ball ball, Hole hole, GameState gameState) {
+		var dx = ball.getPos().x() - hole.pos().x();
+		var dy = ball.getPos().y() - hole.pos().y();
+		if (Math.hypot(dx, dy) < hole.radius()) {
 			switch (ball.getType()) {
 				case HUMAN -> gameState.endGame("Bot wins! Human fell in a hole.");
 				case BOT -> gameState.endGame("Human wins! Bot fell in a hole.");
 				case SMALL_BALL -> {
-					switch (ball.getHitCredit()){
+					switch (ball.getHitCredit()) {
 						case BOT -> gameState.addBotScore();
 						case HUMAN -> gameState.addHumanScore();
 					}
@@ -167,42 +143,26 @@ public class Ball {
 				}
 			}
 		}
-    }
-    
-    public P2d getPos() {
-    	return pos;
-    }
+	}
+
+	public P2d getPos() {
+		return pos;
+	}
 
 	public void setPos(P2d pos) {
 		this.pos = pos;
 	}
-    
-    public double getMass() {
-    	return mass;
-    }
-    
-    public V2d getVel() {
-    	return vel;
-    }
 
-	public void setVel(V2d vel) {
-		this.vel = vel;
+	public double getRadius() {
+		return radius;
 	}
-    
-    public double getRadius() {
-    	return radius;
-    }
 
 	public BallType getType() {
 		return type;
 	}
 
-    public BallType getHitCredit() {
-        return this.hitCredit;
-    }
-
-    public void setHitCredit(BallType hitCredit) {
-        this.hitCredit = hitCredit;
-    }
+	public BallType getHitCredit() {
+		return this.hitCredit;
+	}
 
 }
