@@ -80,8 +80,11 @@ public class Ball {
          * 
          */
         if (dist < minD && dist > 1e-6) {
-			synchronized(a) {
-				synchronized(b) {
+			Ball first = a.hashCode() < b.hashCode() ? a : b;
+			Ball second = a.hashCode() < b.hashCode() ? b : a;
+
+			synchronized(first) {
+				synchronized(second) {
 					dx   = b.pos.x() - a.pos.x();
 					dy   = b.pos.y() - a.pos.y();
 					dist = Math.hypot(dx, dy);
