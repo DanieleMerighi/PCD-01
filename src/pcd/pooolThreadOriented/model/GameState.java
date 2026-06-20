@@ -34,6 +34,14 @@ public class GameState {
         return smallBalls.isEmpty();
     }
 
+    public synchronized List<Ball> getSmallBalls() {
+        return List.copyOf(smallBalls);
+    }
+
+    public synchronized List<Ball> getMainBalls() {
+        return List.of(allBalls.get(0), allBalls.get(1));
+    }
+
     public synchronized int getHumanScore() {
         return humanScore;
     }

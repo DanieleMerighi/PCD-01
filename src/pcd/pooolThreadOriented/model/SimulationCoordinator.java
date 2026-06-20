@@ -25,6 +25,13 @@ public class SimulationCoordinator extends Thread {
 		this.observers = List.copyOf(observers);
 		this.workBuffer = workBuffer;
 		this.workLatch = workLatch;
+		double maxSmallRadius = 0.0;
+		for (Ball b : gameState.getSmallBalls()) {
+			if (b.getRadius() > maxSmallRadius) {
+				maxSmallRadius = b.getRadius();
+			}
+		}
+		this.grid = new SpatialGrid(board.getBounds(), maxSmallRadius);
 	}
 
 	@Override
@@ -56,8 +63,6 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	private void updateState(long dt) {
-		if (grid == null) initGrid();
-
 		distributeLinearWork(ball -> ball.updateState(dt, board));
 
 		distributeLinearWork(ball -> {
@@ -74,11 +79,11 @@ public class SimulationCoordinator extends Thread {
 			return;
 		}
 
-		grid.clearAndPopulate(gameState.getAllBalls(), board.getBounds());
+		grid.clearAndPopulate(gameState.getSmallBalls(), board.getBounds());
 
-		int totalRows = grid.getRows();
-		int nActualWorker = Math.min(workBuffer.size(), totalRows);
-		int rowsPerWorker = (int) Math.ceil((double) totalRows / nActualWorker);
+		final int totalRows = grid.getRows();
+		final int nActualWorker = Math.min(workBuffer.size(), totalRows);
+		final int rowsPerWorker = (int) Math.ceil((double) totalRows / nActualWorker);
 
 		distributeWork(workerIndex -> {
 			int startRow = workerIndex * rowsPerWorker;
@@ -101,6 +106,17 @@ public class SimulationCoordinator extends Thread {
 				}
 			}
 		}, nActualWorker);
+
+		var mainBalls = gameState.getMainBalls();
+		var allBalls = gameState.getAllBalls();
+
+		for (Ball mainBall : mainBalls) {
+			for (Ball otherBall : allBalls) {
+				if (mainBall.getId() != otherBall.getId()) {
+					Ball.resolveCollision(mainBall, otherBall);
+				}
+			}
+		}
 	}
 
     public void distributeWork(Consumer<Integer> action, int nActualWorker) {
@@ -145,14 +161,6 @@ public class SimulationCoordinator extends Thread {
 		for (var o: observers) {
 			o.modelUpdated(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec);
 		}
-	}
-
-	private void initGrid() {
-		double maxRadius = 0;
-		for (Ball b : gameState.getAllBalls()) {
-			if (b.getRadius() > maxRadius) maxRadius = b.getRadius();
-		}
-		grid = new SpatialGrid(board.getBounds(), maxRadius);
 	}
 
 }
