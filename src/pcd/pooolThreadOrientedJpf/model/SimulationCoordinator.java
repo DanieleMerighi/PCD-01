@@ -19,6 +19,7 @@ public class SimulationCoordinator extends Thread {
     private final List<SynchCell<Runnable>> workBuffer;
     private final Latch workLatch;
     private final int maxTicks;
+    private final SpatialGrid grid;
 
     public SimulationCoordinator(
             Board board,
@@ -31,6 +32,7 @@ public class SimulationCoordinator extends Thread {
         this.workBuffer = workBuffer;
         this.workLatch = workLatch;
         this.maxTicks = maxTicks;
+        this.grid = new SpatialGrid(board.getBounds(), 0.1);
     }
 
     @Override
@@ -71,20 +73,50 @@ public class SimulationCoordinator extends Thread {
             return;
         }
 
-        final List<Ball> allBalls = gameState.getAllBalls();
-        final int nActualWorker = Math.min(workBuffer.size(), allBalls.size());
+        // 3. Partizionamento spaziale
+        grid.clearAndPopulate(gameState.getSmallBalls(), board.getBounds());
+
+        // 4. Risoluzione collisioni distribuita
+        final int totalRows = grid.getRows();
+        final int nActualWorker = Math.min(workBuffer.size(), totalRows);
+        final int rowsPerWorker = (int) Math.ceil((double) totalRows / nActualWorker);
 
         distributeWork(new Consumer<Integer>() {
             @Override
-            public void accept(Integer workerIndex) {
-                int idx = workerIndex.intValue();
-                for (int i = idx; i < allBalls.size() - 1; i += nActualWorker) {
-                    for (int j = i + 1; j < allBalls.size(); j++) {
-                        Ball.resolveCollision(allBalls.get(i), allBalls.get(j));
+            public void accept(Integer workerIndexObj) {
+                int workerIndex = workerIndexObj.intValue();
+                int startRow = workerIndex * rowsPerWorker;
+                int endRow = Math.min(startRow + rowsPerWorker, totalRows);
+
+                for (int r = startRow; r < endRow; r++) {
+                    for (int c = 0; c < grid.getCols(); c++) {
+                        List<Ball> cellBalls = grid.getCell(c, r);
+                        if (cellBalls.isEmpty()) continue;
+
+                        List<Ball> nearbyBalls = grid.getNearbyBalls(c, r);
+
+                        for (Ball b1 : cellBalls) {
+                            for (Ball b2 : nearbyBalls) {
+                                if (b1.getId() < b2.getId()) {
+                                    Ball.resolveCollision(b1, b2);
+                                }
+                            }
+                        }
                     }
                 }
             }
         }, nActualWorker);
+
+        List<Ball> mainBalls = gameState.getMainBalls();
+        List<Ball> allBalls = gameState.getAllBalls();
+
+        for (Ball mainBall : mainBalls) {
+            for (Ball otherBall : allBalls) {
+                if (mainBall.getId() != otherBall.getId()) {
+                    Ball.resolveCollision(mainBall, otherBall);
+                }
+            }
+        }
     }
 
     public void distributeWork(final Consumer<Integer> action, int nActualWorker) {
@@ -134,4 +166,5 @@ public class SimulationCoordinator extends Thread {
         }
         gameState.endGame(gameResult);
     }
+
 }
