@@ -11,7 +11,7 @@ public class SpatialGrid {
 
     @SuppressWarnings("unchecked")
     public SpatialGrid(Boundary bounds, double maxRadius) {
-        this.cellSize = maxRadius * 2.1;
+        this.cellSize = maxRadius * 2.01;
         this.cols = (int) Math.ceil((bounds.x1() - bounds.x0()) / cellSize);
         this.rows = (int) Math.ceil((bounds.y1() - bounds.y0()) / cellSize);
         this.cells = new List[cols][rows];
