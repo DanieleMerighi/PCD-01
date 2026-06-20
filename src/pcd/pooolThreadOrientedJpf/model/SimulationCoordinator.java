@@ -73,22 +73,18 @@ public class SimulationCoordinator extends Thread {
             return;
         }
 
-        // 3. Partizionamento spaziale
         grid.clearAndPopulate(gameState.getSmallBalls(), board.getBounds());
 
-        // 4. Risoluzione collisioni distribuita
         final int totalRows = grid.getRows();
         final int nActualWorker = Math.min(workBuffer.size(), totalRows);
-        final int rowsPerWorker = (int) Math.ceil((double) totalRows / nActualWorker);
 
+        // Distribute work to check small balls collisions
         distributeWork(new Consumer<Integer>() {
             @Override
             public void accept(Integer workerIndexObj) {
                 int workerIndex = workerIndexObj.intValue();
-                int startRow = workerIndex * rowsPerWorker;
-                int endRow = Math.min(startRow + rowsPerWorker, totalRows);
-
-                for (int r = startRow; r < endRow; r++) {
+                // Il worker elabora una riga e poi salta di nActualWorker righe (round robin)
+                for (int r = workerIndex; r < grid.getRows(); r += nActualWorker) {
                     for (int c = 0; c < grid.getCols(); c++) {
                         List<Ball> cellBalls = grid.getCell(c, r);
                         if (cellBalls.isEmpty()) continue;
