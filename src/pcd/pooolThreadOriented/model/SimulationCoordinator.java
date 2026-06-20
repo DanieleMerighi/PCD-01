@@ -12,7 +12,7 @@ public class SimulationCoordinator extends Thread {
 	private final List<BoardObserver> observers;
 	private final List<SynchCell<Runnable>> workBuffer;
 	private final Latch workLatch;
-	private SpatialGrid grid;
+	private final SpatialGrid grid;
 	
 	public SimulationCoordinator(
 			Board board,

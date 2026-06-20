@@ -27,7 +27,7 @@ public class Ball {
         this(pos, radius, mass, vel, BallType.SMALL_BALL);
     }
 
-    public void updateState(long dt, Board ctx) {
+    public synchronized void updateState(long dt, Board ctx) {
         double speed = vel.abs();
         double dt_scaled = dt*0.001;
         if (speed > 0.001) {
@@ -171,11 +171,11 @@ public class Ball {
         return id;
     }
 
-    public P2d getPos() {
+    public synchronized P2d getPos() {
         return pos;
     }
 
-    public void setPos(P2d pos) {
+    public synchronized void setPos(P2d pos) {
         this.pos = pos;
     }
 
@@ -187,7 +187,7 @@ public class Ball {
         return type;
     }
 
-    public BallType getHitCredit() {
+    public synchronized BallType getHitCredit() {
         return this.hitCredit;
     }
 

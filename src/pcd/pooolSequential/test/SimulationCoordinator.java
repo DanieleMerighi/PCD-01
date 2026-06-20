@@ -1,9 +1,6 @@
 package pcd.pooolSequential.test;
 
-import pcd.pooolSequential.model.Ball;
-import pcd.pooolSequential.model.Board;
-import pcd.pooolSequential.model.BoardObserver;
-import pcd.pooolSequential.model.GameState;
+import pcd.pooolSequential.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,11 +10,19 @@ public class SimulationCoordinator extends Thread {
 	private final Board board;
 	private final GameState gameState;
 	private final List<BoardObserver> observers;
+	private final SpatialGrid grid;
 	
 	public SimulationCoordinator(Board board, List<BoardObserver> observers) {
 		this.board = board;
 		this.gameState = board.getState();
 		this.observers = new ArrayList<>(observers);
+		double maxSmallRadius = 0.0;
+		for (Ball b : gameState.getSmallBalls()) {
+			if (b.getRadius() > maxSmallRadius) {
+				maxSmallRadius = b.getRadius();
+			}
+		}
+		this.grid = new SpatialGrid(board.getBounds(), maxSmallRadius);
 	}
 
 	private double averageTimeMs = 0.0;
@@ -89,10 +94,31 @@ public class SimulationCoordinator extends Thread {
 			return;
 		}
 
+		grid.clearAndPopulate(gameState.getSmallBalls(), board.getBounds());
+
+		for (int r = 0; r < grid.getRows(); r++) {
+			for (int c = 0; c < grid.getCols(); c++) {
+				var cellBalls = grid.getCell(c, r);
+				if (cellBalls.isEmpty()) continue;
+
+				var nearbyBalls = grid.getNearbyBalls(c, r);
+
+				for (Ball b1 : cellBalls) {
+					for (Ball b2 : nearbyBalls) {
+						if (b1.getId() < b2.getId()) {
+							Ball.resolveCollision(b1, b2);
+						}
+					}
+				}
+			}
+		}
+		var mainBalls = gameState.getMainBalls();
 		allBalls = gameState.getAllBalls();
-		for (int i = 0; i < allBalls.size() - 1; i++) {
-			for (int j = i + 1; j < allBalls.size(); j++) {
-				Ball.resolveCollision(allBalls.get(i), allBalls.get(j));
+		for (Ball mainBall : mainBalls) {
+			for (Ball otherBall : allBalls) {
+				if (mainBall.getId() != otherBall.getId()) {
+					Ball.resolveCollision(mainBall, otherBall);
+				}
 			}
 		}
 	}
