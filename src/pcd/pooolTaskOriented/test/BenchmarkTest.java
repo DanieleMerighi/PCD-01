@@ -11,8 +11,8 @@ import java.util.List;
 public class BenchmarkTest {
     public static void main(String[] args) {
         int nCores = Runtime.getRuntime().availableProcessors();
-        int[] workerConfigs = {1, 2, 4, 8, nCores, nCores + 1};
-        int runsPerConfig = 5;
+        int[] workerConfigs = {1, 2, 4, 6, 8, 10, nCores, nCores + 1};
+        int runsPerConfig = 10;
 
         String csvFile = "benchmark_results_task.csv";
 
