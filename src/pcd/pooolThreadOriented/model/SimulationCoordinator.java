@@ -12,6 +12,7 @@ public class SimulationCoordinator extends Thread {
 	private final List<BoardObserver> observers;
 	private final List<SynchCell<Runnable>> workBuffer;
 	private final Latch workLatch;
+	private SpatialGrid grid;
 	
 	public SimulationCoordinator(
 			Board board,
@@ -55,6 +56,8 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	private void updateState(long dt) {
+		if (grid == null) initGrid();
+
 		distributeLinearWork(ball -> ball.updateState(dt, board));
 
 		distributeLinearWork(ball -> {
@@ -71,16 +74,33 @@ public class SimulationCoordinator extends Thread {
 			return;
 		}
 
-		var allBalls = gameState.getAllBalls();
-		int nActualWorker = Math.min(workBuffer.size(), allBalls.size());
+		grid.clearAndPopulate(gameState.getAllBalls(), board.getBounds());
 
-        distributeWork(workerIndex -> {
-            for (int i = workerIndex; i < allBalls.size() - 1; i += nActualWorker) {
-                for (int j = i + 1; j < allBalls.size(); j++) {
-                    Ball.resolveCollision(allBalls.get(i), allBalls.get(j));
-                }
-            }
-        }, nActualWorker);
+		int totalRows = grid.getRows();
+		int nActualWorker = Math.min(workBuffer.size(), totalRows);
+		int rowsPerWorker = (int) Math.ceil((double) totalRows / nActualWorker);
+
+		distributeWork(workerIndex -> {
+			int startRow = workerIndex * rowsPerWorker;
+			int endRow = Math.min(startRow + rowsPerWorker, totalRows);
+
+			for (int r = startRow; r < endRow; r++) {
+				for (int c = 0; c < grid.getCols(); c++) {
+					List<Ball> cellBalls = grid.getCell(c, r);
+					if (cellBalls.isEmpty()) continue;
+
+					List<Ball> nearbyBalls = grid.getNearbyBalls(c, r);
+
+					for (Ball b1 : cellBalls) {
+						for (Ball b2 : nearbyBalls) {
+							if (b1.getId() < b2.getId()) {
+								Ball.resolveCollision(b1, b2);
+							}
+						}
+					}
+				}
+			}
+		}, nActualWorker);
 	}
 
     public void distributeWork(Consumer<Integer> action, int nActualWorker) {
@@ -125,6 +145,14 @@ public class SimulationCoordinator extends Thread {
 		for (var o: observers) {
 			o.modelUpdated(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec);
 		}
+	}
+
+	private void initGrid() {
+		double maxRadius = 0;
+		for (Ball b : gameState.getAllBalls()) {
+			if (b.getRadius() > maxRadius) maxRadius = b.getRadius();
+		}
+		grid = new SpatialGrid(board.getBounds(), maxRadius);
 	}
 
 }
