@@ -17,7 +17,7 @@ public class BenchmarkTest {
     public static void main(String[] args) {
         int nCores = Runtime.getRuntime().availableProcessors();
         int[] workerConfigs = {1, 2, 4, 6, 8, 10, nCores, nCores + 1};
-        int runsPerConfig = 10;
+        int runsPerConfig = 20;
 
         String csvFile = "benchmark_results_thread.csv";
 

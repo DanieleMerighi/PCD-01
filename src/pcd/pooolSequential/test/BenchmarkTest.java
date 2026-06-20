@@ -10,7 +10,7 @@ import java.util.List;
 
 public class BenchmarkTest {
     public static void main(String[] args) {
-        int runsPerConfig = 10;
+        int runsPerConfig = 20;
 
         String csvFile = "benchmark_results_sequential.csv";
 
