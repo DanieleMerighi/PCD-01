@@ -32,7 +32,7 @@ public class SimulationCoordinator extends Thread {
         this.workBuffer = workBuffer;
         this.workLatch = workLatch;
         this.maxTicks = maxTicks;
-        this.grid = new SpatialGrid(board.getBounds(), 0.1);
+        this.grid = new SpatialGrid(board.getBounds(), 0.9);
     }
 
     @Override
