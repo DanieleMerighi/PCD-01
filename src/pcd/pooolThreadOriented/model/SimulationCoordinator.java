@@ -26,7 +26,7 @@ public class SimulationCoordinator extends Thread {
 		this.workBuffer = workBuffer;
 		this.workLatch = workLatch;
 		double maxSmallRadius = 0.0;
-		for (Ball b : board.getSmallBalls()) {
+		for (Ball b : board.getAllBalls()) {
 			if (b.getRadius() > maxSmallRadius) {
 				maxSmallRadius = b.getRadius();
 			}
@@ -79,42 +79,36 @@ public class SimulationCoordinator extends Thread {
 			return;
 		}
 
-		grid.clearAndPopulate(board.getSmallBalls(), board.getBounds());
+		grid.clearAndPopulate(board.getAllBalls(), board.getBounds());
 
 		final int totalRows = grid.getRows();
 		final int nActualWorker = Math.min(workBuffer.size(), totalRows);
 
 		// Distribute work to check small balls collisions
 		distributeWork(workerIndex -> {
-			// Il worker elabora una riga e poi salta di nActualWorker righe (round robin)
 			for (int r = workerIndex; r < grid.getRows(); r += nActualWorker) {
 				for (int c = 0; c < grid.getCols(); c++) {
 					List<Ball> cellBalls = grid.getCell(c, r);
 					if (cellBalls.isEmpty()) continue;
 
-					List<Ball> nearbyBalls = grid.getNearbyBalls(c, r);
+					// 1. Collisioni INTRA-cella (tra palline dentro la stessa cella)
+					for (int i = 0; i < cellBalls.size(); i++) {
+						Ball b1 = cellBalls.get(i);
+						for (int j = i + 1; j < cellBalls.size(); j++) {
+							Ball.resolveCollision(b1, cellBalls.get(j));
+						}
+					}
 
+					// 2. Collisioni INTER-cella (con le 4 celle adiacenti)
+					List<Ball> nearbyBalls = grid.getForwardNeighbors(c, r);
 					for (Ball b1 : cellBalls) {
 						for (Ball b2 : nearbyBalls) {
-							if (b1.getId() < b2.getId()) {
-								Ball.resolveCollision(b1, b2);
-							}
+							Ball.resolveCollision(b1, b2); // Rimosso il controllo ID
 						}
 					}
 				}
 			}
 		}, nActualWorker);
-
-		var mainBalls = board.getMainBalls();
-		var allBalls = board.getAllBalls();
-
-		for (Ball mainBall : mainBalls) {
-			for (Ball otherBall : allBalls) {
-				if (mainBall.getId() != otherBall.getId()) {
-					Ball.resolveCollision(mainBall, otherBall);
-				}
-			}
-		}
 	}
 
     public void distributeWork(Consumer<Integer> action, int nActualWorker) {

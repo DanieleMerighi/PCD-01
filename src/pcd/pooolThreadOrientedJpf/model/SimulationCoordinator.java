@@ -89,30 +89,25 @@ public class SimulationCoordinator extends Thread {
                         List<Ball> cellBalls = grid.getCell(c, r);
                         if (cellBalls.isEmpty()) continue;
 
-                        List<Ball> nearbyBalls = grid.getNearbyBalls(c, r);
+                        // 1. Collisioni INTRA-cella (tra palline dentro la stessa cella)
+                        for (int i = 0; i < cellBalls.size(); i++) {
+                            Ball b1 = cellBalls.get(i);
+                            for (int j = i + 1; j < cellBalls.size(); j++) {
+                                Ball.resolveCollision(b1, cellBalls.get(j));
+                            }
+                        }
 
+                        // 2. Collisioni INTER-cella (con le 4 celle adiacenti)
+                        List<Ball> nearbyBalls = grid.getForwardNeighbors(c, r);
                         for (Ball b1 : cellBalls) {
                             for (Ball b2 : nearbyBalls) {
-                                if (b1.getId() < b2.getId()) {
-                                    Ball.resolveCollision(b1, b2);
-                                }
+                                Ball.resolveCollision(b1, b2); // Rimosso il controllo ID
                             }
                         }
                     }
                 }
             }
         }, nActualWorker);
-
-        List<Ball> mainBalls = board.getMainBalls();
-        List<Ball> allBalls = board.getAllBalls();
-
-        for (Ball mainBall : mainBalls) {
-            for (Ball otherBall : allBalls) {
-                if (mainBall.getId() != otherBall.getId()) {
-                    Ball.resolveCollision(mainBall, otherBall);
-                }
-            }
-        }
     }
 
     public void distributeWork(final Consumer<Integer> action, int nActualWorker) {

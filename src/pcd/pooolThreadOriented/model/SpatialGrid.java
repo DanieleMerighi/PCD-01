@@ -11,7 +11,7 @@ public class SpatialGrid {
 
     @SuppressWarnings("unchecked")
     public SpatialGrid(Boundary bounds, double maxRadius) {
-        this.cellSize = maxRadius * 2.01;
+        this.cellSize = maxRadius + 1e-6;
         this.cols = (int) Math.ceil((bounds.x1() - bounds.x0()) / cellSize);
         this.rows = (int) Math.ceil((bounds.y1() - bounds.y0()) / cellSize);
         this.cells = new List[cols][rows];
@@ -36,17 +36,39 @@ public class SpatialGrid {
         }
     }
 
-    public List<Ball> getNearbyBalls(int col, int row) {
-        List<Ball> nearby = new ArrayList<>();
-        for (int i = Math.max(0, col - 1); i <= Math.min(cols - 1, col + 1); i++) {
-            for (int j = Math.max(0, row - 1); j <= Math.min(rows - 1, row + 1); j++) {
-                nearby.addAll(cells[i][j]);
-            }
+    public List<Ball> getForwardNeighbors(int col, int row) {
+        List<Ball> neighbors = new ArrayList<>();
+
+        // Destra
+        if (col + 1 < cols) {
+            neighbors.addAll(cells[col + 1][row]);
         }
-        return nearby;
+        // Sotto a sinistra
+        if (col - 1 >= 0 && row + 1 < rows) {
+            neighbors.addAll(cells[col - 1][row + 1]);
+        }
+        // Sotto
+        if (row + 1 < rows) {
+            neighbors.addAll(cells[col][row + 1]);
+        }
+        // Sotto a destra
+        if (col + 1 < cols && row + 1 < rows) {
+            neighbors.addAll(cells[col + 1][row + 1]);
+        }
+
+        return neighbors;
     }
 
-    public int getCols() { return cols; }
-    public int getRows() { return rows; }
-    public List<Ball> getCell(int col, int row) { return cells[col][row]; }
+    public int getCols() {
+        return cols;
+    }
+
+    public int getRows() {
+        return rows;
+    }
+
+    public List<Ball> getCell(int col, int row) {
+        return cells[col][row];
+    }
+
 }
