@@ -1,5 +1,9 @@
 package pcd.pooolThreadOriented.model;
 
+import pcd.pooolThreadOriented.util.AtomicList;
+import pcd.pooolThreadOriented.util.AtomicListImpl;
+import pcd.pooolThreadOriented.util.AtomicReference;
+import pcd.pooolThreadOriented.util.AtomicReferenceImpl;
 import pcd.pooolThreadOriented.view.BallViewInfo;
 import pcd.pooolThreadOriented.view.GameStateViewInfo;
 
@@ -8,75 +12,74 @@ import java.util.List;
 
 public class GameState {
 
-    private final List<Ball> smallBalls;
-    private final List<Ball> allBalls;
-    private int humanScore;
-    private int botScore;
-    private boolean gameOver = false;
-    private String gameResult = "";
+    private final AtomicList<Ball> smallBalls;
+    private final AtomicList<Ball> allBalls;
+    private final AtomicReference<Integer> humanScore = new AtomicReferenceImpl<>(0);
+    private final AtomicReference<Integer> botScore = new AtomicReferenceImpl<>(0);
+    private final AtomicReference<Boolean> gameOver = new AtomicReferenceImpl<>(false);
+    private final AtomicReference<String> gameResult = new AtomicReferenceImpl<>("");
 
     public GameState(Ball humanBall, Ball botBall, List<Ball> smallBalls) {
-        allBalls = new ArrayList<>();
-        allBalls.addAll(List.of(humanBall, botBall));
+        allBalls = new AtomicListImpl<>(List.of(humanBall, botBall));
         allBalls.addAll(smallBalls);
         this.smallBalls = allBalls.subList(2, allBalls.size()); // Dynamic view
     }
 
-    public synchronized List<Ball> getAllBalls() {
-        return List.copyOf(allBalls);
+    public List<Ball> getAllBalls() {
+        return allBalls.getAll();
     }
 
-    public synchronized void removeSmallBall(Ball ball) {
-        smallBalls.remove(ball);
+    public void removeSmallBall(Ball ball) {
+        smallBalls.removeElement(ball);
     }
 
-    public synchronized boolean isSmallBallEmpty() {
+    public boolean isSmallBallEmpty() {
         return smallBalls.isEmpty();
     }
 
-    public synchronized List<Ball> getSmallBalls() {
-        return List.copyOf(smallBalls);
+    public List<Ball> getSmallBalls() {
+        return smallBalls.getAll();
     }
 
-    public synchronized List<Ball> getMainBalls() {
+    public List<Ball> getMainBalls() {
         return List.of(allBalls.get(0), allBalls.get(1));
     }
 
-    public synchronized int getHumanScore() {
-        return humanScore;
+    public int getHumanScore() {
+        return humanScore.get();
     }
 
-    public synchronized int getBotScore() {
-        return botScore;
+    public int getBotScore() {
+        return botScore.get();
     }
 
-    public synchronized void addHumanScore() {
-        humanScore++;
+    public void addHumanScore() {
+        humanScore.map(value -> value + 1);
     }
 
-    public synchronized void addBotScore() {
-        botScore++;
+    public void addBotScore() {
+        botScore.map(value -> value + 1);
     }
 
-    public synchronized boolean isGameOver() {
-        return gameOver;
+    public boolean isGameOver() {
+        return gameOver.get();
     }
 
-    public synchronized String getGameResult() {
-        return gameResult;
+    public String getGameResult() {
+        return gameResult.get();
     }
 
-    public synchronized void endGame(String result) {
-        gameOver = true;
-        gameResult = result;
+    public void endGame(String result) {
+        gameOver.set(true);
+        gameResult.set(result);
     }
 
-    public synchronized GameStateViewInfo getGameStateViewInfo() {
+    public GameStateViewInfo getGameStateViewInfo() {
         var balls = new ArrayList<BallViewInfo>();
-        for (var ball : smallBalls) {
+        for (var ball : smallBalls.getAll()) {
             balls.add(new BallViewInfo(ball.getPos(), ball.getRadius()));
         }
-        return new GameStateViewInfo(balls, humanScore, botScore);
+        return new GameStateViewInfo(balls, humanScore.get(), botScore.get());
     }
 
 }
