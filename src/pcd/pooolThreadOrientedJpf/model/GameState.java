@@ -1,10 +1,8 @@
 package pcd.pooolThreadOrientedJpf.model;
 
-import pcd.pooolThreadOriented.util.AtomicReference;
-import pcd.pooolThreadOriented.util.AtomicReferenceImpl;
+import pcd.pooolThreadOrientedJpf.util.AtomicReference;
+import pcd.pooolThreadOrientedJpf.util.AtomicReferenceImpl;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Function;
 
 public class GameState {
