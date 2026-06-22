@@ -21,8 +21,8 @@ public class ViewModel {
 		this.tickPerSec = tickPerSec;
 	}
 
-	public ArrayList<BallViewInfo> getBalls() {
-		return new ArrayList<>(gameStateViewInfo.balls());
+	public ArrayList<BallViewInfo> getSmallBalls() {
+		return new ArrayList<>(boardViewInfo.smallBalls());
 	}
 
 	public long getTickPerSec() {

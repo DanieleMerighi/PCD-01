@@ -83,7 +83,7 @@ public class ViewFrame extends JFrame implements KeyListener {
 			}
 
 			g2.setStroke(new BasicStroke(1));
-			for (var b: viewModel.getBalls()) {
+			for (var b: viewModel.getSmallBalls()) {
 				var p = b.pos();
 				int x0 = (int)(ox + p.x()*delta);
 				int y0 = (int)(oy - p.y()*delta);
@@ -116,7 +116,7 @@ public class ViewFrame extends JFrame implements KeyListener {
 			}
 
 			g2.setStroke(new BasicStroke(1));
-			g2.drawString("Num small balls: " + viewModel.getBalls().size(), 20, 2 * oy - 60);
+			g2.drawString("Num small balls: " + viewModel.getSmallBalls().size(), 20, 2 * oy - 60);
 			g2.drawString("Average tick per sec: " + viewModel.getTickPerSec(), 20, 2 * oy - 40);
 
 			g2.setColor(Color.BLUE);

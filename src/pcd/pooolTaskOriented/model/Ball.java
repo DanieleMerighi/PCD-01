@@ -139,7 +139,7 @@ public class Ball {
 		}
 	}
 
-	public static void resolveHole(Ball ball, Hole hole, GameState gameState) {
+	public static void resolveHole(Ball ball, Hole hole, Board board, GameState gameState) {
 		var dx = ball.getPos().x() - hole.pos().x();
 		var dy = ball.getPos().y() - hole.pos().y();
 		if (Math.hypot(dx, dy) < hole.radius()) {
@@ -151,7 +151,7 @@ public class Ball {
 						case BOT -> gameState.addBotScore();
 						case HUMAN -> gameState.addHumanScore();
 					}
-					gameState.removeSmallBall(ball);
+					board.removeSmallBall(ball);
 				}
 			}
 		}

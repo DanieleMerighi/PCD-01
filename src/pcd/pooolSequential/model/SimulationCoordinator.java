@@ -15,7 +15,7 @@ public class SimulationCoordinator extends Thread {
 		this.gameState = board.getState();
 		this.observers = new ArrayList<>(observers);
 		double maxSmallRadius = 0.0;
-		for (Ball b : gameState.getSmallBalls()) {
+		for (Ball b : board.getSmallBalls()) {
 			if (b.getRadius() > maxSmallRadius) {
 				maxSmallRadius = b.getRadius();
 			}
@@ -49,7 +49,7 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	private void updateState(long dt) {
-		var allBalls = gameState.getAllBalls();
+		var allBalls = board.getAllBalls();
 
 		for (var b : allBalls) {
 			b.updateState(dt, board);
@@ -57,19 +57,19 @@ public class SimulationCoordinator extends Thread {
 
 		for (var ball : allBalls) {
 			for (var hole : board.getHoles()) {
-				Ball.resolveHole(ball, hole, gameState);
+				Ball.resolveHole(ball, hole, board, gameState);
 			}
 		}
 
 		if (gameState.isGameOver())
 			return;
 
-		if (gameState.isSmallBallEmpty()) {
+		if (board.isSmallBallEmpty()) {
 			setEndGame();
 			return;
 		}
 
-		grid.clearAndPopulate(gameState.getSmallBalls(), board.getBounds());
+		grid.clearAndPopulate(board.getSmallBalls(), board.getBounds());
 
 		for (int r = 0; r < grid.getRows(); r++) {
 			for (int c = 0; c < grid.getCols(); c++) {
@@ -87,8 +87,8 @@ public class SimulationCoordinator extends Thread {
 				}
 			}
 		}
-		var mainBalls = gameState.getMainBalls();
-		allBalls = gameState.getAllBalls();
+		var mainBalls = board.getMainBalls();
+		allBalls = board.getAllBalls();
 		for (Ball mainBall : mainBalls) {
 			for (Ball otherBall : allBalls) {
 				if (mainBall.getId() != otherBall.getId()) {

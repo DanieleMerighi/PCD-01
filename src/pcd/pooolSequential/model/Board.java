@@ -1,5 +1,7 @@
 package pcd.pooolSequential.model;
 
+import pcd.pooolSequential.util.AtomicList;
+import pcd.pooolSequential.util.AtomicListImpl;
 import pcd.pooolSequential.view.BallViewInfo;
 import pcd.pooolSequential.view.BoardViewInfo;
 import pcd.pooolSequential.view.HoleViewInfo;
@@ -16,13 +18,15 @@ public class Board {
     private final List<Hole> holes;
     private final Ball humanBall;
     private final Ball botBall;
+    private final AtomicList<Ball> smallBalls;
     private final GameState state;
     private final Random random;
 
     public Board(BoardConf conf) {
         humanBall = conf.getHumanBall();
         botBall = conf.getBotBall();
-        state = new GameState(humanBall, botBall, conf.getSmallBalls());
+        smallBalls = new AtomicListImpl<>(conf.getSmallBalls());
+        state = new GameState();
         bounds = conf.getBoardBoundary();
         holes = conf.getHoles();
         random = new Random(System.currentTimeMillis());
@@ -45,17 +49,26 @@ public class Board {
         botBall.kick(v);
     }
 
-    private boolean isAngleDangerous(double angle, P2d botPos) {
-        for (var hole : holes) {
-            double dx = hole.pos().x() - botPos.x();
-            double dy = hole.pos().y() - botPos.y();
-            double dist = Math.hypot(dx, dy);
-            double toHole = Math.atan2(dy, dx); // [-π, π]
-            double diff = ((angle - toHole + Math.PI) % (2 * Math.PI)) - Math.PI;
-            double dangerHalfAngle = Math.min(Math.PI * 0.6, 0.5 / dist);
-            if (Math.abs(diff) < dangerHalfAngle) return true;
-        }
-        return false;
+    public List<Ball> getAllBalls() {
+        var l = new ArrayList<>(List.of(humanBall, botBall));
+        l.addAll(smallBalls.getAll());
+        return List.copyOf(l);
+    }
+
+    public void removeSmallBall(Ball ball) {
+        smallBalls.removeElement(ball);
+    }
+
+    public boolean isSmallBallEmpty() {
+        return smallBalls.isEmpty();
+    }
+
+    public List<Ball> getSmallBalls() {
+        return smallBalls.getAll();
+    }
+
+    public List<Ball> getMainBalls() {
+        return List.of(humanBall, botBall);
     }
 
     public Boundary getBounds(){
@@ -73,11 +86,28 @@ public class Board {
     public BoardViewInfo getBoardViewInfo() {
         var humanBall = new BallViewInfo(this.humanBall.getPos(), this.humanBall.getRadius());
         var botBall = new BallViewInfo(this.botBall.getPos(), this.botBall.getRadius());
+        var smallBalls = new ArrayList<BallViewInfo>();
+        for (var ball : this.smallBalls.getAll()) {
+            smallBalls.add(new BallViewInfo(ball.getPos(), ball.getRadius()));
+        }
         var holes = new ArrayList<HoleViewInfo>();
         for (var hole : this.holes) {
             holes.add(new HoleViewInfo(hole.pos(), hole.radius()));
         }
-        return new BoardViewInfo(humanBall, botBall, holes);
+        return new BoardViewInfo(humanBall, botBall, smallBalls, holes);
+    }
+
+    private boolean isAngleDangerous(double angle, P2d botPos) {
+        for (var hole : holes) {
+            double dx = hole.pos().x() - botPos.x();
+            double dy = hole.pos().y() - botPos.y();
+            double dist = Math.hypot(dx, dy);
+            double toHole = Math.atan2(dy, dx); // [-π, π]
+            double diff = ((angle - toHole + Math.PI) % (2 * Math.PI)) - Math.PI;
+            double dangerHalfAngle = Math.min(Math.PI * 0.6, 0.5 / dist);
+            if (Math.abs(diff) < dangerHalfAngle) return true;
+        }
+        return false;
     }
 
 }

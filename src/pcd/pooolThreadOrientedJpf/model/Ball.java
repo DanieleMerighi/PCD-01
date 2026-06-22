@@ -139,7 +139,7 @@ public class Ball {
 		}
 	}
 
-    public static void resolveHole(Ball ball, Hole hole, GameState gameState) {
+    public static void resolveHole(Ball ball, Hole hole, Board board, GameState gameState) {
         double dx = ball.getPos().x() - hole.pos().x();
         double dy = ball.getPos().y() - hole.pos().y();
         if (Math.hypot(dx, dy) < hole.radius()) {
@@ -161,7 +161,7 @@ public class Ball {
                         default:
                             break;
                     }
-                    gameState.removeSmallBall(ball);
+                    board.removeSmallBall(ball);
                     break;
             }
         }

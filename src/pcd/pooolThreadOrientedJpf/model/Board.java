@@ -1,5 +1,9 @@
 package pcd.pooolThreadOrientedJpf.model;
 
+import pcd.pooolThreadOrientedJpf.util.AtomicList;
+import pcd.pooolThreadOrientedJpf.util.AtomicListImpl;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
@@ -10,29 +14,41 @@ public class Board {
     private final List<Hole> holes;
     private final Ball humanBall;
     private final Ball botBall;
+    private final AtomicList<Ball> smallBalls;
     private final GameState state;
 
     public Board(BoardConf conf) {
         humanBall = conf.getHumanBall();
         botBall = conf.getBotBall();
-        state = new GameState(humanBall, botBall, conf.getSmallBalls());
+        smallBalls = new AtomicListImpl<>(conf.getSmallBalls());
+        state = new GameState();
         bounds = conf.getBoardBoundary();
         holes = conf.getHoles();
     }
 
-    public void kickHumanBall(Direction direction) {
-        V2d velocity = direction.getVector().mul(KICK_SPEED);
-        humanBall.kick(velocity);
+    public List<Ball> getAllBalls() {
+        var l = new ArrayList<>(List.of(humanBall, botBall));
+        l.addAll(smallBalls.getAll());
+        return List.copyOf(l);
     }
 
-    public void kickBotBall() {
-        var botPos = botBall.getPos();
-        double angle = Math.PI * 0.5;
-        var v = new V2d(Math.cos(angle), Math.sin(angle)).mul(5);
-        botBall.kick(v);
+    public void removeSmallBall(Ball ball) {
+        smallBalls.removeElement(ball);
     }
 
-    public Boundary getBounds() {
+    public boolean isSmallBallEmpty() {
+        return smallBalls.isEmpty();
+    }
+
+    public List<Ball> getSmallBalls() {
+        return smallBalls.getAll();
+    }
+
+    public List<Ball> getMainBalls() {
+        return List.of(humanBall, botBall);
+    }
+
+    public Boundary getBounds(){
         return this.bounds;
     }
 
@@ -43,4 +59,5 @@ public class Board {
     public GameState getState() {
         return this.state;
     }
+
 }

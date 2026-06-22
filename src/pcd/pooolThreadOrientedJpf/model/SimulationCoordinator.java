@@ -59,7 +59,7 @@ public class SimulationCoordinator extends Thread {
             @Override
             public void accept(Ball ball) {
                 for (Hole hole : board.getHoles()) {
-                    Ball.resolveHole(ball, hole, gameState);
+                    Ball.resolveHole(ball, hole, board, gameState);
                 }
             }
         });
@@ -68,12 +68,12 @@ public class SimulationCoordinator extends Thread {
             return;
         }
 
-        if (gameState.isSmallBallEmpty()) {
+        if (board.isSmallBallEmpty()) {
             setEndGame();
             return;
         }
 
-        grid.clearAndPopulate(gameState.getSmallBalls(), board.getBounds());
+        grid.clearAndPopulate(board.getSmallBalls(), board.getBounds());
 
         final int totalRows = grid.getRows();
         final int nActualWorker = Math.min(workBuffer.size(), totalRows);
@@ -103,8 +103,8 @@ public class SimulationCoordinator extends Thread {
             }
         }, nActualWorker);
 
-        List<Ball> mainBalls = gameState.getMainBalls();
-        List<Ball> allBalls = gameState.getAllBalls();
+        List<Ball> mainBalls = board.getMainBalls();
+        List<Ball> allBalls = board.getAllBalls();
 
         for (Ball mainBall : mainBalls) {
             for (Ball otherBall : allBalls) {
@@ -130,7 +130,7 @@ public class SimulationCoordinator extends Thread {
     }
 
     public void distributeLinearWork(final Consumer<Ball> action) {
-        final List<Ball> allBalls = gameState.getAllBalls();
+        final List<Ball> allBalls = board.getAllBalls();
         final int totalSize = allBalls.size();
 
         final int nActualWorker = Math.min(workBuffer.size(), totalSize);

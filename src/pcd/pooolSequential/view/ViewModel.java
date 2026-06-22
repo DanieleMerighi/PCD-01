@@ -15,45 +15,45 @@ public class ViewModel {
 		this.gameStateViewInfo = gameStateViewInfo;
 	}
 	
-	public synchronized void update(BoardViewInfo boardViewInfo, GameStateViewInfo gameStateViewInfo, long tickPerSec) {
+	public void update(BoardViewInfo boardViewInfo, GameStateViewInfo gameStateViewInfo, long tickPerSec) {
 		this.boardViewInfo = boardViewInfo;
 		this.gameStateViewInfo = gameStateViewInfo;
 		this.tickPerSec = tickPerSec;
 	}
 
-	public synchronized ArrayList<BallViewInfo> getBalls(){
-		return new ArrayList<>(gameStateViewInfo.balls());
+	public ArrayList<BallViewInfo> getSmallBalls() {
+		return new ArrayList<>(boardViewInfo.smallBalls());
 	}
 
-	public synchronized long getTickPerSec() {
+	public long getTickPerSec() {
 		return tickPerSec;
 	}
 
-	public synchronized BallViewInfo getHumanBall() {
+	public BallViewInfo getHumanBall() {
 		return boardViewInfo.humanBall();
 	}
 
-	public synchronized BallViewInfo getBotBall() {
+	public BallViewInfo getBotBall() {
 		return boardViewInfo.botBall();
 	}
 
-	public synchronized ArrayList<HoleViewInfo> getHoles() {
+	public ArrayList<HoleViewInfo> getHoles() {
 		return new ArrayList<>(boardViewInfo.holes());
 	}
 
-	public synchronized int getHumanScore() {
+	public int getHumanScore() {
 		return gameStateViewInfo.humanScore();
 	}
 
-	public synchronized int getBotScore() {
+	public int getBotScore() {
 		return gameStateViewInfo.botScore();
 	}
 
-	public synchronized void setGameOver(String message) {
+	public void setGameOver(String message) {
 		this.gameOverMessage = message;
 	}
 
-	public synchronized String getGameOverMessage() {
+	public String getGameOverMessage() {
 		return gameOverMessage;
 	}
 

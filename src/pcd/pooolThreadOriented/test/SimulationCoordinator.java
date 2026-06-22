@@ -28,7 +28,7 @@ public class SimulationCoordinator extends Thread {
 		this.workBuffer = workBuffer;
 		this.workLatch = workLatch;
 		double maxSmallRadius = 0.0;
-		for (Ball b : gameState.getSmallBalls()) {
+		for (Ball b : board.getSmallBalls()) {
 			if (b.getRadius() > maxSmallRadius) {
 				maxSmallRadius = b.getRadius();
 			}
@@ -94,19 +94,19 @@ public class SimulationCoordinator extends Thread {
 
 		distributeLinearWork(ball -> {
 			for (var hole : board.getHoles()) {
-				Ball.resolveHole(ball, hole, gameState);
+				Ball.resolveHole(ball, hole, board, gameState);
 			}
 		});
 
 		if (gameState.isGameOver())
 			return;
 
-		if (gameState.isSmallBallEmpty()) {
+		if (board.isSmallBallEmpty()) {
 			setEndGame();
 			return;
 		}
 
-		grid.clearAndPopulate(gameState.getSmallBalls(), board.getBounds());
+		grid.clearAndPopulate(board.getSmallBalls(), board.getBounds());
 
 		final int totalRows = grid.getRows();
 		final int nActualWorker = Math.min(workBuffer.size(), totalRows);
@@ -132,8 +132,8 @@ public class SimulationCoordinator extends Thread {
 			}
 		}, nActualWorker);
 
-		var mainBalls = gameState.getMainBalls();
-		var allBalls = gameState.getAllBalls();
+		var mainBalls = board.getMainBalls();
+		var allBalls = board.getAllBalls();
 
 		for (Ball mainBall : mainBalls) {
 			for (Ball otherBall : allBalls) {
@@ -156,7 +156,7 @@ public class SimulationCoordinator extends Thread {
     }
 
 	public void distributeLinearWork(Consumer<Ball> action) {
-		var allBalls = gameState.getAllBalls();
+		var allBalls = board.getAllBalls();
 		int totalSize = allBalls.size();
 
 		int nActualWorker = Math.min(workBuffer.size(), totalSize);

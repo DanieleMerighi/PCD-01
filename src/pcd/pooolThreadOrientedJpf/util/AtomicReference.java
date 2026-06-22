@@ -1,0 +1,13 @@
+package pcd.pooolThreadOrientedJpf.util;
+
+import java.util.function.Function;
+
+public interface AtomicReference<T> {
+
+    T get();
+
+    void set(T value);
+
+    void map(Function<? super T, ? extends T> mapper);
+    
+}

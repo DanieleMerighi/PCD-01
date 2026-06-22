@@ -31,7 +31,5 @@ public class PooolJpf {
         SimulationCoordinator coordinator = new SimulationCoordinator(
                 board, workBuffer, workLatch, MAX_TICKS);
         coordinator.start();
-        var botUpdater = new BotUpdater(board);
-        botUpdater.start();
     }
 }
