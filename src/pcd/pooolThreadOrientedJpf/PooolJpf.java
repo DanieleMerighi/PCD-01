@@ -1,9 +1,6 @@
 package pcd.pooolThreadOrientedJpf;
 
-import pcd.pooolThreadOrientedJpf.model.Board;
-import pcd.pooolThreadOrientedJpf.model.MinimalBoardConf;
-import pcd.pooolThreadOrientedJpf.model.SimulationCoordinator;
-import pcd.pooolThreadOrientedJpf.model.SimulationWorker;
+import pcd.pooolThreadOrientedJpf.model.*;
 import pcd.pooolThreadOrientedJpf.util.LatchImpl;
 import pcd.pooolThreadOrientedJpf.util.SynchCell;
 import pcd.pooolThreadOrientedJpf.util.SynchCellImpl;
@@ -34,5 +31,7 @@ public class PooolJpf {
         SimulationCoordinator coordinator = new SimulationCoordinator(
                 board, workBuffer, workLatch, MAX_TICKS);
         coordinator.start();
+        var botUpdater = new BotUpdater(board);
+        botUpdater.start();
     }
 }

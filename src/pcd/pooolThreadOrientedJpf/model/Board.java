@@ -25,6 +25,13 @@ public class Board {
         humanBall.kick(velocity);
     }
 
+    public void kickBotBall() {
+        var botPos = botBall.getPos();
+        double angle = Math.PI * 0.5;
+        var v = new V2d(Math.cos(angle), Math.sin(angle)).mul(5);
+        botBall.kick(v);
+    }
+
     public Boundary getBounds() {
         return this.bounds;
     }
