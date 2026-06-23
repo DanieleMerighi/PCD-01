@@ -52,12 +52,6 @@ public class SimulationCoordinator extends Thread {
             @Override
             public void accept(Ball ball) {
                 ball.updateState(dt, board);
-            }
-        });
-
-        distributeLinearWork(new Consumer<Ball>() {
-            @Override
-            public void accept(Ball ball) {
                 for (Hole hole : board.getHoles()) {
                     Ball.resolveHole(ball, hole, board, gameState);
                 }
@@ -101,7 +95,7 @@ public class SimulationCoordinator extends Thread {
                         List<Ball> nearbyBalls = grid.getForwardNeighbors(c, r);
                         for (Ball b1 : cellBalls) {
                             for (Ball b2 : nearbyBalls) {
-                                Ball.resolveCollision(b1, b2); // Rimosso il controllo ID
+                                Ball.resolveCollision(b1, b2);
                             }
                         }
                     }

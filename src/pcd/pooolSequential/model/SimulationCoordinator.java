@@ -85,7 +85,7 @@ public class SimulationCoordinator extends Thread {
 				List<Ball> nearbyBalls = grid.getForwardNeighbors(c, r);
 				for (Ball b1 : cellBalls) {
 					for (Ball b2 : nearbyBalls) {
-						Ball.resolveCollision(b1, b2); // Rimosso il controllo ID
+						Ball.resolveCollision(b1, b2);
 					}
 				}
 			}
