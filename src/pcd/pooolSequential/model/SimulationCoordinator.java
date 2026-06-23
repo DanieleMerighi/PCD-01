@@ -51,11 +51,8 @@ public class SimulationCoordinator extends Thread {
 	private void updateState(long dt) {
 		var allBalls = board.getAllBalls();
 
-		for (var b : allBalls) {
-			b.updateState(dt, board);
-		}
-
 		for (var ball : allBalls) {
+			ball.updateState(dt, board);
 			for (var hole : board.getHoles()) {
 				Ball.resolveHole(ball, hole, board, gameState);
 			}

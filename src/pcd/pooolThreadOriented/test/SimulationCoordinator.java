@@ -28,7 +28,7 @@ public class SimulationCoordinator extends Thread {
 		this.workBuffer = workBuffer;
 		this.workLatch = workLatch;
 		double maxSmallRadius = 0.0;
-		for (Ball b : board.getSmallBalls()) {
+		for (Ball b : board.getAllBalls()) {
 			if (b.getRadius() > maxSmallRadius) {
 				maxSmallRadius = b.getRadius();
 			}
@@ -90,9 +90,8 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	private void updateState(long dt) {
-		distributeLinearWork(ball -> ball.updateState(dt, board));
-
 		distributeLinearWork(ball -> {
+			ball.updateState(dt, board);
 			for (var hole : board.getHoles()) {
 				Ball.resolveHole(ball, hole, board, gameState);
 			}
@@ -106,7 +105,7 @@ public class SimulationCoordinator extends Thread {
 			return;
 		}
 
-		grid.clearAndPopulate(board.getSmallBalls(), board.getBounds());
+		grid.clearAndPopulate(board.getAllBalls(), board.getBounds());
 
 		final int totalRows = grid.getRows();
 		final int nActualWorker = Math.min(workBuffer.size(), totalRows);
@@ -136,17 +135,6 @@ public class SimulationCoordinator extends Thread {
 				}
 			}
 		}, nActualWorker);
-
-		var mainBalls = board.getMainBalls();
-		var allBalls = board.getAllBalls();
-
-		for (Ball mainBall : mainBalls) {
-			for (Ball otherBall : allBalls) {
-				if (mainBall.getId() != otherBall.getId()) {
-					Ball.resolveCollision(mainBall, otherBall);
-				}
-			}
-		}
 	}
 
     public void distributeWork(Consumer<Integer> action, int nActualWorker) {

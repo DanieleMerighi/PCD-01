@@ -63,9 +63,8 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	private void updateState(long dt) {
-		distributeLinearWork(ball -> ball.updateState(dt, board));
-
 		distributeLinearWork(ball -> {
+			ball.updateState(dt, board);
 			for (var hole : board.getHoles()) {
 				Ball.resolveHole(ball, hole, board, gameState);
 			}
