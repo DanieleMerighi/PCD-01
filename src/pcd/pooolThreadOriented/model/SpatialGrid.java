@@ -18,7 +18,7 @@ public class SpatialGrid {
 
         for (int i = 0; i < cols; i++) {
             for (int j = 0; j < rows; j++) {
-                cells[i][j] = new ArrayList<>();
+                cells[i][j] = new ArrayList<>(16);
             }
         }
     }
@@ -30,8 +30,9 @@ public class SpatialGrid {
             }
         }
         for (Ball b : balls) {
-            int col = (int) Math.max(0, Math.min(cols - 1, (b.getPos().x() - bounds.x0()) / cellSize));
-            int row = (int) Math.max(0, Math.min(rows - 1, (b.getPos().y() - bounds.y0()) / cellSize));
+            P2d pos = b.getPos();
+            int col = (int) Math.max(0, Math.min(cols - 1, (pos.x() - bounds.x0()) / cellSize));
+            int row = (int) Math.max(0, Math.min(rows - 1, (pos.y() - bounds.y0()) / cellSize));
             cells[col][row].add(b);
         }
     }

@@ -69,24 +69,29 @@ public class SimulationCoordinator extends Thread {
 		grid.clearAndPopulate(board.getAllBalls(), board.getBounds());
 
 		for (int r = 0; r < grid.getRows(); r++) {
-			for (int c = 0; c < grid.getCols(); c++) {
-				List<Ball> cellBalls = grid.getCell(c, r);
-				if (cellBalls.isEmpty()) continue;
+			processRowCollisions(r);
+		}
+	}
 
-				// 1. Collisioni INTRA-cella (tra palline dentro la stessa cella)
-				for (int i = 0; i < cellBalls.size(); i++) {
-					Ball b1 = cellBalls.get(i);
-					for (int j = i + 1; j < cellBalls.size(); j++) {
-						Ball.resolveCollision(b1, cellBalls.get(j));
-					}
+	private void processRowCollisions(int r) {
+		for (int c = 0; c < grid.getCols(); c++) {
+			List<Ball> cellBalls = grid.getCell(c, r);
+			if (cellBalls.isEmpty()) continue;
+
+			// 1. Collisioni INTRA-cella
+			for (int i = 0; i < cellBalls.size(); i++) {
+				Ball b1 = cellBalls.get(i);
+				for (int j = i + 1; j < cellBalls.size(); j++) {
+					Ball.resolveCollision(b1, cellBalls.get(j));
 				}
+			}
 
-				// 2. Collisioni INTER-cella (con le 4 celle adiacenti)
-				List<Ball> nearbyBalls = grid.getForwardNeighbors(c, r);
-				for (Ball b1 : cellBalls) {
-					for (Ball b2 : nearbyBalls) {
-						Ball.resolveCollision(b1, b2);
-					}
+			// 2. Collisioni INTER-cella (con i 4 vicini in avanti/basso)
+			List<Ball> nearbyBalls = grid.getForwardNeighbors(c, r);
+			for (int i = 0; i < cellBalls.size(); i++) {
+				Ball b1 = cellBalls.get(i);
+				for (Ball b2 : nearbyBalls) {
+					Ball.resolveCollision(b1, b2);
 				}
 			}
 		}

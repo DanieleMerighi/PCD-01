@@ -14,8 +14,6 @@ public class Ball {
 	private final double mass;
 	private final BallType type;
 	private final AtomicReference<BallType> hitCredit;
-	private static int idCounter = 0;
-	private final int id = idCounter++;
 
 	public Ball(P2d pos, double radius, double mass, V2d vel, BallType type) {
 		this.pos = new AtomicReferenceImpl<>(pos);
@@ -154,10 +152,6 @@ public class Ball {
 				}
 			}
 		}
-	}
-
-	public int getId() {
-		return id;
 	}
 
 	public P2d getPos() {
