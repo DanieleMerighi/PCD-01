@@ -18,7 +18,7 @@ public class BotUpdater extends Thread {
 		while (!gameState.isGameOver()) {
 			try {
 				Thread.sleep(random.nextLong(400, 1000));
-				board.kickBotBall();
+				// board.kickBotBall();
 			} catch (InterruptedException ignored) {}
 		}
 	}

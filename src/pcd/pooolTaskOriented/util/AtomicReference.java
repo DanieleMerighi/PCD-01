@@ -8,6 +8,9 @@ public interface AtomicReference<T> {
 
     void set(T value);
 
+    T getAndSet(T value);
+
     void map(Function<? super T, ? extends T> mapper);
-    
+
 }
+

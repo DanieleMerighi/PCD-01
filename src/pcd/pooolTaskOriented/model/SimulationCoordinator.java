@@ -64,6 +64,9 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	private void updateState(long dt) {
+		board.applyHumanKick();
+		board.applyBotKick();
+
 		distributeLinearWork(ball -> {
 			ball.updateState(dt, board);
 			for (var hole : board.getHoles()) {
@@ -84,32 +87,56 @@ public class SimulationCoordinator extends Thread {
 		final int totalRows = grid.getRows();
 		final int nActualWorker = Math.min(nWorker, totalRows);
 
-		// Distribute work to check small balls collisions
+		// ---------------------------------------------------------
+		// PASSATA 1: Collisioni Righe PARI (0, 2, 4, 6...)
+		// ---------------------------------------------------------
 		distributeWork(workerIndex -> {
-			// Il worker elabora una riga e poi salta di nActualWorker righe (round robin)
-			for (int r = workerIndex; r < grid.getRows(); r += nActualWorker) {
-				for (int c = 0; c < grid.getCols(); c++) {
-					List<Ball> cellBalls = grid.getCell(c, r);
-					if (cellBalls.isEmpty()) continue;
-
-					// 1. Collisioni INTRA-cella (tra palline dentro la stessa cella)
-					for (int i = 0; i < cellBalls.size(); i++) {
-						Ball b1 = cellBalls.get(i);
-						for (int j = i + 1; j < cellBalls.size(); j++) {
-							Ball.resolveCollision(b1, cellBalls.get(j));
-						}
-					}
-
-					// 2. Collisioni INTER-cella (con le 4 celle adiacenti)
-					List<Ball> nearbyBalls = grid.getForwardNeighbors(c, r);
-					for (Ball b1 : cellBalls) {
-						for (Ball b2 : nearbyBalls) {
-							Ball.resolveCollision(b1, b2);
-						}
-					}
+			for (int r = 0; r < totalRows; r += 2) {
+				// Interleavizzazione logica delle sole righe pari tra i worker
+				if ((r / 2) % nActualWorker == workerIndex) {
+					processRowCollisions(r);
 				}
 			}
 		}, nActualWorker);
+
+		// ---------------------------------------------------------
+		// PASSATA 2: Collisioni Righe DISPARI (1, 3, 5, 7...)
+		// ---------------------------------------------------------
+		distributeWork(workerIndex -> {
+			for (int r = 1; r < totalRows; r += 2) {
+				// Interleavizzazione logica delle sole righe dispari tra i worker
+				if ((r / 2) % nActualWorker == workerIndex) {
+					processRowCollisions(r);
+				}
+			}
+		}, nActualWorker);
+	}
+
+	// Metodo di supporto per calcolare le collisioni intra e inter cella di una riga
+	private void processRowCollisions(int r) {
+		final int totalCols = grid.getCols();
+		for (int c = 0; c < totalCols; c++) {
+			List<Ball> cellBalls = grid.getCell(c, r);
+			if (cellBalls.isEmpty()) continue;
+
+			// 1. Collisioni INTRA-cella
+			int cSize = cellBalls.size();
+			for (int i = 0; i < cSize; i++) {
+				Ball b1 = cellBalls.get(i);
+				for (int j = i + 1; j < cSize; j++) {
+					Ball.resolveCollision(b1, cellBalls.get(j));
+				}
+			}
+
+			// 2. Collisioni INTER-cella (con i 4 vicini in avanti/basso)
+			List<Ball> nearbyBalls = grid.getForwardNeighbors(c, r);
+			for (int i = 0; i < cSize; i++) {
+				Ball b1 = cellBalls.get(i);
+				for (var b2 : nearbyBalls) {
+					Ball.resolveCollision(b1, b2);
+				}
+			}
+		}
 	}
 
 	public void distributeWork(Consumer<Integer> action, int nActualWorker) {

@@ -8,8 +8,6 @@ import java.util.List;
 
 public class Board {
 
-    private static final double KICK_SPEED = 1.5;
-
     private final Boundary bounds;
     private final List<Hole> holes;
     private final Ball humanBall;
@@ -38,14 +36,6 @@ public class Board {
 
     public boolean isSmallBallEmpty() {
         return smallBalls.isEmpty();
-    }
-
-    public List<Ball> getSmallBalls() {
-        return smallBalls.getAll();
-    }
-
-    public List<Ball> getMainBalls() {
-        return List.of(humanBall, botBall);
     }
 
     public Boundary getBounds(){

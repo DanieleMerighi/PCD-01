@@ -1,7 +1,7 @@
 package pcd.pooolSequential.model;
 
-import pcd.pooolSequential.util.AtomicList;
-import pcd.pooolSequential.util.AtomicListImpl;
+import pcd.pooolSequential.util.AtomicReference;
+import pcd.pooolSequential.util.AtomicReferenceImpl;
 import pcd.pooolSequential.view.BallViewInfo;
 import pcd.pooolSequential.view.BoardViewInfo;
 import pcd.pooolSequential.view.HoleViewInfo;
@@ -18,14 +18,18 @@ public class Board {
     private final List<Hole> holes;
     private final Ball humanBall;
     private final Ball botBall;
-    private final AtomicList<Ball> smallBalls;
+    private final AtomicReference<V2d> humanKick;
+    private final AtomicReference<V2d> botKick;
+    private final List<Ball> smallBalls;
     private final GameState state;
     private final Random random;
 
     public Board(BoardConf conf) {
         humanBall = conf.getHumanBall();
         botBall = conf.getBotBall();
-        smallBalls = new AtomicListImpl<>(conf.getSmallBalls());
+        humanKick = new AtomicReferenceImpl<>(null);
+        botKick = new AtomicReferenceImpl<>(null);
+        smallBalls = new ArrayList<>(conf.getSmallBalls());
         state = new GameState();
         bounds = conf.getBoardBoundary();
         holes = conf.getHoles();
@@ -34,7 +38,7 @@ public class Board {
 
     public void kickHumanBall(Direction direction) {
         var velocity = direction.getVector().mul(KICK_SPEED);
-        humanBall.kick(velocity);
+        humanKick.set(velocity);
     }
 
     public void kickBotBall() {
@@ -46,29 +50,35 @@ public class Board {
             attempts++;
         } while (attempts < 20 && isAngleDangerous(angle, botPos));
         var v = new V2d(Math.cos(angle), Math.sin(angle)).mul(KICK_SPEED);
-        botBall.kick(v);
+        botKick.set(v);
     }
 
     public List<Ball> getAllBalls() {
         var l = new ArrayList<>(List.of(humanBall, botBall));
-        l.addAll(smallBalls.getAll());
+        l.addAll(smallBalls);
         return List.copyOf(l);
     }
 
     public void removeSmallBall(Ball ball) {
-        smallBalls.removeElement(ball);
+        smallBalls.remove(ball);
     }
 
     public boolean isSmallBallEmpty() {
         return smallBalls.isEmpty();
     }
 
-    public List<Ball> getSmallBalls() {
-        return smallBalls.getAll();
+    public void applyHumanKick() {
+        var vel = humanKick.getAndSet(null);
+        if (vel != null) {
+            humanBall.kick(vel);
+        }
     }
 
-    public List<Ball> getMainBalls() {
-        return List.of(humanBall, botBall);
+    public void applyBotKick() {
+        var vel = botKick.getAndSet(null);
+        if (vel != null) {
+            botBall.kick(vel);
+        }
     }
 
     public Boundary getBounds(){
@@ -87,7 +97,7 @@ public class Board {
         var humanBall = new BallViewInfo(this.humanBall.getPos(), this.humanBall.getRadius());
         var botBall = new BallViewInfo(this.botBall.getPos(), this.botBall.getRadius());
         var smallBalls = new ArrayList<BallViewInfo>();
-        for (var ball : this.smallBalls.getAll()) {
+        for (var ball : this.smallBalls) {
             smallBalls.add(new BallViewInfo(ball.getPos(), ball.getRadius()));
         }
         var holes = new ArrayList<HoleViewInfo>();

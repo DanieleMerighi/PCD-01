@@ -27,6 +27,14 @@ public class AtomicReferenceImpl<T> implements AtomicReference<T> {
 		this.value = value;
 	}
 
+	@Override
+	public synchronized T getAndSet(T value) {
+		var ret = this.value;
+		this.value = value;
+		return ret;
+	}
+
+	@Override
 	public synchronized void map(Function<? super T, ? extends T> mapper) {
 		this.value = mapper.apply(value);
 	}

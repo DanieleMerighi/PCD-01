@@ -2,6 +2,8 @@ package pcd.pooolThreadOriented.model;
 
 import pcd.pooolThreadOriented.util.AtomicList;
 import pcd.pooolThreadOriented.util.AtomicListImpl;
+import pcd.pooolThreadOriented.util.AtomicReference;
+import pcd.pooolThreadOriented.util.AtomicReferenceImpl;
 import pcd.pooolThreadOriented.view.BallViewInfo;
 import pcd.pooolThreadOriented.view.BoardViewInfo;
 import pcd.pooolThreadOriented.view.HoleViewInfo;
@@ -18,6 +20,8 @@ public class Board {
     private final List<Hole> holes;
     private final Ball humanBall;
     private final Ball botBall;
+    private final AtomicReference<V2d> humanKick;
+    private final AtomicReference<V2d> botKick;
     private final AtomicList<Ball> smallBalls;
     private final GameState state;
     private final Random random;
@@ -25,6 +29,8 @@ public class Board {
     public Board(BoardConf conf) {
         humanBall = conf.getHumanBall();
         botBall = conf.getBotBall();
+        humanKick = new AtomicReferenceImpl<>(null);
+        botKick = new AtomicReferenceImpl<>(null);
         smallBalls = new AtomicListImpl<>(conf.getSmallBalls());
         state = new GameState();
         bounds = conf.getBoardBoundary();
@@ -34,7 +40,7 @@ public class Board {
 
     public void kickHumanBall(Direction direction) {
         var velocity = direction.getVector().mul(KICK_SPEED);
-        humanBall.kick(velocity);
+        humanKick.set(velocity);
     }
 
     public void kickBotBall() {
@@ -46,7 +52,7 @@ public class Board {
             attempts++;
         } while (attempts < 20 && isAngleDangerous(angle, botPos));
         var v = new V2d(Math.cos(angle), Math.sin(angle)).mul(KICK_SPEED);
-        botBall.kick(v);
+        botKick.set(v);
     }
 
     public List<Ball> getAllBalls() {
@@ -63,12 +69,18 @@ public class Board {
         return smallBalls.isEmpty();
     }
 
-    public List<Ball> getSmallBalls() {
-        return smallBalls.getAll();
+    public void applyHumanKick() {
+        var vel = humanKick.getAndSet(null);
+        if (vel != null) {
+            humanBall.kick(vel);
+        }
     }
 
-    public List<Ball> getMainBalls() {
-        return List.of(humanBall, botBall);
+    public void applyBotKick() {
+        var vel = botKick.getAndSet(null);
+        if (vel != null) {
+            botBall.kick(vel);
+        }
     }
 
     public Boundary getBounds(){
