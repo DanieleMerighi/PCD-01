@@ -1,10 +1,5 @@
 package pcd.pooolThreadOrientedJpf.model;
 
-import pcd.pooolThreadOrientedJpf.util.AtomicReference;
-import pcd.pooolThreadOrientedJpf.util.AtomicReferenceImpl;
-
-import java.util.function.Function;
-
 public class Ball {
 
 	private static final double FRICTION_FACTOR = 0.25; 	/* 0 minimum */
@@ -38,7 +33,7 @@ public class Ball {
 			var factor = Math.max(0, speed - dec) / speed;
 			vel = vel.mul(factor);
 		} else {
-			this.vel.set(new V2d(0,0));
+			this.vel = new V2d(0,0);
 		}
 		pos = pos.sum(vel.mul(dt_scaled));
 		applyBoundaryConstraints(ctx);
