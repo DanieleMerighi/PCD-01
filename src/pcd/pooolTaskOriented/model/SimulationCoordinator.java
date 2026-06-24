@@ -67,12 +67,19 @@ public class SimulationCoordinator extends Thread {
 		board.applyHumanKick();
 		board.applyBotKick();
 
-		distributeLinearWork(ball -> {
-			ball.updateState(dt, board);
-			for (var hole : board.getHoles()) {
-				Ball.resolveHole(ball, hole, board, gameState);
-			}
-		});
+		var work = new ArrayList<Callable<Void>>();
+		for (var ball : board.getAllBalls()) {
+			work.add(() -> {
+				ball.updateState(dt, board);
+				for (var hole : board.getHoles()) {
+					Ball.resolveHole(ball, hole, board, gameState);
+				}
+				return null;
+			});
+		}
+		try {
+			exec.invokeAll(work);
+		} catch (Exception ignored) {}
 
 		if (gameState.isGameOver())
 			return;
@@ -85,31 +92,38 @@ public class SimulationCoordinator extends Thread {
 		grid.clearAndPopulate(board.getAllBalls(), board.getBounds());
 
 		final int totalRows = grid.getRows();
-		final int nActualWorker = Math.min(nWorker, totalRows);
 
 		// ---------------------------------------------------------
 		// PASSATA 1: Collisioni Righe PARI (0, 2, 4, 6...)
 		// ---------------------------------------------------------
-		distributeWork(workerIndex -> {
-			for (int r = 0; r < totalRows; r += 2) {
-				// Interleavizzazione logica delle sole righe pari tra i worker
-				if ((r / 2) % nActualWorker == workerIndex) {
-					processRowCollisions(r);
-				}
-			}
-		}, nActualWorker);
+		work = new ArrayList<>();
+		for (int r = 0; r < totalRows; r += 2) {
+			int finalR = r;
+			work.add(() -> {
+				processRowCollisions(finalR);
+				return null;
+			});
+
+		}
+		try {
+			exec.invokeAll(work);
+		} catch (Exception ignored) {}
 
 		// ---------------------------------------------------------
 		// PASSATA 2: Collisioni Righe DISPARI (1, 3, 5, 7...)
 		// ---------------------------------------------------------
-		distributeWork(workerIndex -> {
-			for (int r = 1; r < totalRows; r += 2) {
-				// Interleavizzazione logica delle sole righe dispari tra i worker
-				if ((r / 2) % nActualWorker == workerIndex) {
-					processRowCollisions(r);
-				}
-			}
-		}, nActualWorker);
+		work = new ArrayList<>();
+		for (int r = 1; r < totalRows; r += 2) {
+			int finalR = r;
+			work.add(() -> {
+				processRowCollisions(finalR);
+				return null;
+			});
+
+		}
+		try {
+			exec.invokeAll(work);
+		} catch (Exception ignored) {}
 	}
 
 	// Metodo di supporto per calcolare le collisioni intra e inter cella di una riga
