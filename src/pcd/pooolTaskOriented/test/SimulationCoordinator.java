@@ -1,6 +1,7 @@
 package pcd.pooolTaskOriented.test;
 
 import pcd.pooolTaskOriented.model.*;
+import pcd.pooolTaskOriented.util.IntRange;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,19 +16,20 @@ public class SimulationCoordinator extends Thread {
 	private final GameState gameState;
 	private final List<BoardObserver> observers;
 	private final ExecutorService exec;
-	private final int nWorker;
+	private final int nTasks;
 	private final SpatialGrid grid;
 
 	public SimulationCoordinator(
 			Board board,
 			List<BoardObserver> observers,
-			int nWorker
+			int nWorker,
+			int nTasks
 	) {
 		this.board = board;
 		this.gameState = board.getState();
 		this.observers = List.copyOf(observers);
 		this.exec = Executors.newFixedThreadPool(nWorker);
-		this.nWorker = nWorker;
+		this.nTasks = nTasks;
 		double maxSmallRadius = 0.0;
 		for (Ball b : board.getAllBalls()) {
 			if (b.getRadius() > maxSmallRadius) {
@@ -90,12 +92,12 @@ public class SimulationCoordinator extends Thread {
 		board.applyHumanKick();
 		board.applyBotKick();
 
-		distributeLinearWork(ball -> {
+		distributeLinearWork(board.getAllBalls(), ball -> {
 			ball.updateState(dt, board);
 			for (var hole : board.getHoles()) {
 				Ball.resolveHole(ball, hole, board, gameState);
 			}
-		});
+		}, nTasks);
 
 		if (gameState.isGameOver())
 			return;
@@ -108,31 +110,22 @@ public class SimulationCoordinator extends Thread {
 		grid.clearAndPopulate(board.getAllBalls(), board.getBounds());
 
 		final int totalRows = grid.getRows();
-		final int nActualWorker = Math.min(nWorker, totalRows);
 
 		// ---------------------------------------------------------
 		// PASSATA 1: Collisioni Righe PARI (0, 2, 4, 6...)
 		// ---------------------------------------------------------
-		distributeWork(workerIndex -> {
-			for (int r = 0; r < totalRows; r += 2) {
-				// Interleavizzazione logica delle sole righe pari tra i worker
-				if ((r / 2) % nActualWorker == workerIndex) {
-					processRowCollisions(r);
-				}
-			}
-		}, nActualWorker);
+		distributeWork(
+				IntRange.withStep(0, totalRows, 2),
+				this::processRowCollisions
+		);
 
 		// ---------------------------------------------------------
 		// PASSATA 2: Collisioni Righe DISPARI (1, 3, 5, 7...)
 		// ---------------------------------------------------------
-		distributeWork(workerIndex -> {
-			for (int r = 1; r < totalRows; r += 2) {
-				// Interleavizzazione logica delle sole righe dispari tra i worker
-				if ((r / 2) % nActualWorker == workerIndex) {
-					processRowCollisions(r);
-				}
-			}
-		}, nActualWorker);
+		distributeWork(
+				IntRange.withStep(1, totalRows, 2),
+				this::processRowCollisions
+		);
 	}
 
 	// Metodo di supporto per calcolare le collisioni intra e inter cella di una riga
@@ -162,37 +155,34 @@ public class SimulationCoordinator extends Thread {
 		}
 	}
 
-	public void distributeWork(Consumer<Integer> action, int nActualWorker) {
+	public <T> void distributeWork(List<T> items, Consumer<T> action) {
 		var work = new ArrayList<Callable<Void>>();
-		for (int i = 0; i < nActualWorker; i++) {
-			int workerIndex = i;
+		for (var item : items) {
 			work.add(() -> {
-				action.accept(workerIndex);
+				action.accept(item);
 				return null;
 			});
 		}
 		try {
 			exec.invokeAll(work);
 		} catch (Exception ignored) {}
-
 	}
 
-	public void distributeLinearWork(Consumer<Ball> action) {
-		var allBalls = board.getAllBalls();
-		int totalSize = allBalls.size();
+	public <T> void distributeLinearWork(List<T> items, Consumer<T> action, int nTasks) {
+		int totalSize = items.size();
 
-		int actualWorkers = Math.min(nWorker, totalSize);
-		int workAmount = totalSize / actualWorkers;
+		int actualTasks = Math.min(nTasks, totalSize);
+		int workAmount = totalSize / actualTasks;
 
-		distributeWork(workerIndex -> {
-			int start = workerIndex * workAmount;
-			// L'ultimo worker prende tutti gli elementi fino alla fine della lista,
+		distributeWork(IntRange.until(actualTasks), taskIndex -> {
+			int start = taskIndex * workAmount;
+			// L'ultima task prende tutti gli elementi fino alla fine della lista,
 			// includendo il resto della divisione
-			int end = (workerIndex == actualWorkers - 1) ? totalSize : start + workAmount;
+			int end = (taskIndex == actualTasks - 1) ? totalSize : start + workAmount;
 			for (int j = start; j < end; j++) {
-				action.accept(allBalls.get(j));
+				action.accept(items.get(j));
 			}
-		}, nWorker);
+		});
 	}
 
 	private void setEndGame() {

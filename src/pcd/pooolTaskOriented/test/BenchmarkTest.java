@@ -26,7 +26,7 @@ public class BenchmarkTest {
 
                     var boardConf = new MassiveBoardConf();
                     var board = new Board(boardConf);
-                    var updater = new SimulationCoordinator(board, List.of(), workers);
+                    var updater = new SimulationCoordinator(board, List.of(), workers, 100);
 
                     updater.start();
 
