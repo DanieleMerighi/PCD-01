@@ -26,14 +26,14 @@ public class Ball {
 	}
 
 	public void updateState(long dt, Board ctx) {
-		var speed = this.vel.abs();
+		var speed = vel.abs();
 		var dt_scaled = dt*0.001;
 		if (speed > 0.001) {
 			var dec    = FRICTION_FACTOR * dt_scaled;
 			var factor = Math.max(0, speed - dec) / speed;
 			vel = vel.mul(factor);
 		} else {
-			this.vel = new V2d(0,0);
+			vel = new V2d(0,0);
 		}
 		pos = pos.sum(vel.mul(dt_scaled));
 		applyBoundaryConstraints(ctx);
