@@ -3,6 +3,7 @@ package pcd.pooolSequential.test;
 import pcd.pooolSequential.model.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SimulationCoordinator extends Thread {
@@ -11,7 +12,11 @@ public class SimulationCoordinator extends Thread {
 	private final GameState gameState;
 	private final List<BoardObserver> observers;
 	private final SpatialGrid grid;
-	
+
+	// Metriche registrate
+	private double medianTimeMs = 0.0;
+	private double meanTimeMs = 0.0;
+
 	public SimulationCoordinator(Board board, List<BoardObserver> observers) {
 		this.board = board;
 		this.gameState = board.getState();
@@ -25,27 +30,26 @@ public class SimulationCoordinator extends Thread {
 		this.grid = new SpatialGrid(board.getBounds(), maxSmallRadius);
 	}
 
-	private double averageTimeMs = 0.0;
-
-	public double getAverageTimeMs() {
-		return averageTimeMs;
-	}
+	public double getMedianTimeMs() { return medianTimeMs; }
+	public double getMeanTimeMs() { return meanTimeMs; }
 
 	@Override
 	public void run() {
 		long nTicks = 0;
 		long t0 = System.currentTimeMillis();
-		long lastUpdateTime = System.currentTimeMillis();
+		long lastUpdateTime = t0;
 		long tickPerSec = 0;
 
-		final int WARMUP_FRAMES = 1000;
-		final int MEASURE_FRAMES = 2000;
-		long totalMeasureTimeNano = 0;
-		int measuredFramesCount = 0;
+		// Parametri di benchmark rigorosi
+		final int WARMUP_FRAMES = 10000;
+		final int MEASURE_FRAMES = 20000;
+		long[] frameTimesNano = new long[MEASURE_FRAMES];
+		int measureIndex = 0;
 
 		while (!gameState.isGameOver()) {
-			long elapsed = System.currentTimeMillis() - lastUpdateTime;
-			lastUpdateTime = System.currentTimeMillis();
+			long now = System.currentTimeMillis();
+			long elapsed = now - lastUpdateTime;
+			lastUpdateTime = now;
 
 			long startUpdate = System.nanoTime();
 			this.updateState(elapsed);
@@ -53,23 +57,40 @@ public class SimulationCoordinator extends Thread {
 
 			nTicks++;
 
-			if (nTicks > WARMUP_FRAMES && nTicks <= (WARMUP_FRAMES + MEASURE_FRAMES)) {
-				totalMeasureTimeNano += (endUpdate - startUpdate);
-				measuredFramesCount++;
-			} else if (nTicks > (WARMUP_FRAMES + MEASURE_FRAMES)) {
-				averageTimeMs = (totalMeasureTimeNano / 1_000_000.0) / measuredFramesCount;
-				break;
+			// Registrazione campioni post-warmup
+			if (nTicks > WARMUP_FRAMES) {
+				frameTimesNano[measureIndex++] = (endUpdate - startUpdate);
+
+				if (measureIndex >= MEASURE_FRAMES) {
+					processStatistics(frameTimesNano);
+					break;
+				}
 			}
 
 			tickPerSec = 0;
 			long dt = (System.currentTimeMillis() - t0);
 			if (dt > 0) {
-				tickPerSec = nTicks*1000/dt;
+				tickPerSec = nTicks * 1000 / dt;
 			}
 			notifyObservers(tickPerSec);
 		}
 		for (var o : observers) {
 			o.gameOver(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec, gameState.getGameResult());
+		}
+	}
+
+	private void processStatistics(long[] timesNano) {
+		// Calcolo Media
+		long totalNano = 0;
+		for (long t : timesNano) { totalNano += t; }
+		this.meanTimeMs = (totalNano / 1_000_000.0) / timesNano.length;
+
+		// Calcolo Mediana (P50)
+		Arrays.sort(timesNano);
+		if (timesNano.length % 2 == 0) {
+			this.medianTimeMs = ((timesNano[timesNano.length / 2] + timesNano[(timesNano.length / 2) - 1]) / 2.0) / 1_000_000.0;
+		} else {
+			this.medianTimeMs = (timesNano[timesNano.length / 2]) / 1_000_000.0;
 		}
 	}
 
@@ -138,5 +159,4 @@ public class SimulationCoordinator extends Thread {
 			o.modelUpdated(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), framePerSec);
 		}
 	}
-
 }

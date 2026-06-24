@@ -4,6 +4,7 @@ import pcd.pooolTaskOriented.model.*;
 import pcd.pooolTaskOriented.util.IntRange;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -18,6 +19,9 @@ public class SimulationCoordinator extends Thread {
 	private final ExecutorService exec;
 	private final int nTasks;
 	private final SpatialGrid grid;
+
+	private double medianTimeMs = 0.0;
+	private double meanTimeMs = 0.0;
 
 	public SimulationCoordinator(
 			Board board,
@@ -39,27 +43,26 @@ public class SimulationCoordinator extends Thread {
 		this.grid = new SpatialGrid(board.getBounds(), maxSmallRadius);
 	}
 
-	private double averageTimeMs = 0.0;
-
-	public double getAverageTimeMs() {
-		return averageTimeMs;
-	}
+	public double getMedianTimeMs() { return medianTimeMs; }
+	public double getMeanTimeMs() { return meanTimeMs; }
 
 	@Override
 	public void run() {
 		long nTicks = 0;
 		long t0 = System.currentTimeMillis();
-		long lastUpdateTime = System.currentTimeMillis();
+		long lastUpdateTime = t0;
 		long tickPerSec = 0;
 
-		final int WARMUP_FRAMES = 1000;
-		final int MEASURE_FRAMES = 2000;
-		long totalMeasureTimeNano = 0;
-		int measuredFramesCount = 0;
+		// Finestra di campionamento tarata per la JIT C2
+		final int WARMUP_FRAMES = 10000;
+		final int MEASURE_FRAMES = 20000;
+		long[] frameTimesNano = new long[MEASURE_FRAMES];
+		int measureIndex = 0;
 
 		while (!gameState.isGameOver()) {
-			long elapsed = System.currentTimeMillis() - lastUpdateTime;
-			lastUpdateTime = System.currentTimeMillis();
+			long now = System.currentTimeMillis();
+			long elapsed = now - lastUpdateTime;
+			lastUpdateTime = now;
 
 			long startUpdate = System.nanoTime();
 			this.updateState(elapsed);
@@ -67,25 +70,40 @@ public class SimulationCoordinator extends Thread {
 
 			nTicks++;
 
-			if (nTicks > WARMUP_FRAMES && nTicks <= (WARMUP_FRAMES + MEASURE_FRAMES)) {
-				totalMeasureTimeNano += (endUpdate - startUpdate);
-				measuredFramesCount++;
-			} else if (nTicks > (WARMUP_FRAMES + MEASURE_FRAMES)) {
-				averageTimeMs = (totalMeasureTimeNano / 1_000_000.0) / measuredFramesCount;
-				break;
+			if (nTicks > WARMUP_FRAMES) {
+				frameTimesNano[measureIndex++] = (endUpdate - startUpdate);
+
+				if (measureIndex >= MEASURE_FRAMES) {
+					processStatistics(frameTimesNano);
+					break;
+				}
 			}
 
 			tickPerSec = 0;
 			long dt = (System.currentTimeMillis() - t0);
 			if (dt > 0) {
-				tickPerSec = nTicks*1000/dt;
+				tickPerSec = nTicks * 1000 / dt;
 			}
 			notifyObservers(tickPerSec);
 		}
+
 		for (var o : observers) {
 			o.gameOver(board.getBoardViewInfo(), gameState.getGameStateViewInfo(), tickPerSec, gameState.getGameResult());
 		}
 		exec.shutdown();
+	}
+
+	private void processStatistics(long[] timesNano) {
+		long totalNano = 0;
+		for (long t : timesNano) { totalNano += t; }
+		this.meanTimeMs = (totalNano / 1_000_000.0) / timesNano.length;
+
+		Arrays.sort(timesNano);
+		if (timesNano.length % 2 == 0) {
+			this.medianTimeMs = ((timesNano[timesNano.length / 2] + timesNano[(timesNano.length / 2) - 1]) / 2.0) / 1_000_000.0;
+		} else {
+			this.medianTimeMs = (timesNano[timesNano.length / 2]) / 1_000_000.0;
+		}
 	}
 
 	private void updateState(long dt) {
@@ -108,34 +126,27 @@ public class SimulationCoordinator extends Thread {
 		}
 
 		grid.clearAndPopulate(board.getAllBalls(), board.getBounds());
-
 		final int totalRows = grid.getRows();
 
-		// ---------------------------------------------------------
-		// PASSATA 1: Collisioni Righe PARI (0, 2, 4, 6...)
-		// ---------------------------------------------------------
+		// Passata PARI
 		distributeWork(
 				IntRange.withStep(0, totalRows, 2),
 				this::processRowCollisions
 		);
 
-		// ---------------------------------------------------------
-		// PASSATA 2: Collisioni Righe DISPARI (1, 3, 5, 7...)
-		// ---------------------------------------------------------
+		// Passata DISPARI
 		distributeWork(
 				IntRange.withStep(1, totalRows, 2),
 				this::processRowCollisions
 		);
 	}
 
-	// Metodo di supporto per calcolare le collisioni intra e inter cella di una riga
 	private void processRowCollisions(int r) {
 		final int totalCols = grid.getCols();
 		for (int c = 0; c < totalCols; c++) {
 			List<Ball> cellBalls = grid.getCell(c, r);
 			if (cellBalls.isEmpty()) continue;
 
-			// 1. Collisioni INTRA-cella
 			int cSize = cellBalls.size();
 			for (int i = 0; i < cSize; i++) {
 				Ball b1 = cellBalls.get(i);
@@ -144,7 +155,6 @@ public class SimulationCoordinator extends Thread {
 				}
 			}
 
-			// 2. Collisioni INTER-cella (con i 4 vicini in avanti/basso)
 			List<Ball> nearbyBalls = grid.getForwardNeighbors(c, r);
 			for (int i = 0; i < cSize; i++) {
 				Ball b1 = cellBalls.get(i);
@@ -156,7 +166,7 @@ public class SimulationCoordinator extends Thread {
 	}
 
 	public <T> void distributeWork(List<T> items, Consumer<T> action) {
-		var work = new ArrayList<Callable<Void>>();
+		var work = new ArrayList<Callable<Void>>(items.size());
 		for (var item : items) {
 			work.add(() -> {
 				action.accept(item);
@@ -170,14 +180,11 @@ public class SimulationCoordinator extends Thread {
 
 	public <T> void distributeLinearWork(List<T> items, Consumer<T> action, int nTasks) {
 		int totalSize = items.size();
-
 		int actualTasks = Math.min(nTasks, totalSize);
 		int workAmount = totalSize / actualTasks;
 
 		distributeWork(IntRange.until(actualTasks), taskIndex -> {
 			int start = taskIndex * workAmount;
-			// L'ultima task prende tutti gli elementi fino alla fine della lista,
-			// includendo il resto della divisione
 			int end = (taskIndex == actualTasks - 1) ? totalSize : start + workAmount;
 			for (int j = start; j < end; j++) {
 				action.accept(items.get(j));
