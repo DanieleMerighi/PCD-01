@@ -66,7 +66,7 @@ public class SimulationCoordinator extends Thread {
 		board.applyHumanKick();
 		board.applyBotKick();
 
-		distributeLinearWork(ball -> {
+		distributeLinearWork(board.getAllBalls(), ball -> {
 			ball.updateState(dt, board);
 			for (var hole : board.getHoles()) {
 				Ball.resolveHole(ball, hole, board, gameState);
@@ -149,9 +149,8 @@ public class SimulationCoordinator extends Thread {
 		workLatch.await();
 	}
 
-	public void distributeLinearWork(Consumer<Ball> action) {
-		var allBalls = board.getAllBalls();
-		int totalSize = allBalls.size();
+	public <T> void distributeLinearWork(List<T> items, Consumer<T> action) {
+		int totalSize = items.size();
 
 		int nActualWorker = Math.min(workBuffer.size(), totalSize);
 		int workAmount = totalSize / nActualWorker;
@@ -160,7 +159,7 @@ public class SimulationCoordinator extends Thread {
 			int start = workerIndex * workAmount;
 			int end = (workerIndex == nActualWorker - 1) ? totalSize : start + workAmount;
 			for (int j = start; j < end; j++) {
-				action.accept(allBalls.get(j));
+				action.accept(items.get(j));
 			}
 		}, nActualWorker);
 	}

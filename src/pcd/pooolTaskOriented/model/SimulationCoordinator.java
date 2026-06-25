@@ -68,12 +68,12 @@ public class SimulationCoordinator extends Thread {
 		board.applyHumanKick();
 		board.applyBotKick();
 
-        distributeLinearWork(board.getAllBalls(), ball -> {
+        distributeLinearTasks(board.getAllBalls(), ball -> {
             ball.updateState(dt, board);
             for (var hole : board.getHoles()) {
                 Ball.resolveHole(ball, hole, board, gameState);
             }
-        }, nTasks);
+        });
 
 		if (gameState.isGameOver())
 			return;
@@ -90,7 +90,7 @@ public class SimulationCoordinator extends Thread {
 		// ---------------------------------------------------------
 		// PASSATA 1: Collisioni Righe PARI (0, 2, 4, 6...)
 		// ---------------------------------------------------------
-        distributeWork(
+        runTasks(
                 IntRange.withStep(0, totalRows, 2),
                 this::processRowCollisions
         );
@@ -98,7 +98,7 @@ public class SimulationCoordinator extends Thread {
 		// ---------------------------------------------------------
 		// PASSATA 2: Collisioni Righe DISPARI (1, 3, 5, 7...)
 		// ---------------------------------------------------------
-        distributeWork(
+        runTasks(
                 IntRange.withStep(1, totalRows, 2),
                 this::processRowCollisions
         );
@@ -131,7 +131,7 @@ public class SimulationCoordinator extends Thread {
 		}
 	}
 
-	public <T> void distributeWork(List<T> items, Consumer<T> action) {
+    public <T> void runTasks(List<T> items, Consumer<T> action) {
 		var work = new ArrayList<Callable<Void>>();
 		for (var item : items) {
 			work.add(() -> {
@@ -144,17 +144,16 @@ public class SimulationCoordinator extends Thread {
 		} catch (Exception ignored) {}
 	}
 
-	public <T> void distributeLinearWork(List<T> items, Consumer<T> action, int nTasks) {
+    public <T> void distributeLinearTasks(List<T> items, Consumer<T> action) {
 		int totalSize = items.size();
+		int nActualTasks = Math.min(nTasks, totalSize);
+		int workAmount = totalSize / nActualTasks;
 
-		int actualTasks = Math.min(nTasks, totalSize);
-		int workAmount = totalSize / actualTasks;
-
-		distributeWork(IntRange.until(actualTasks), taskIndex -> {
+		runTasks(IntRange.until(nActualTasks), taskIndex -> {
 			int start = taskIndex * workAmount;
 			// L'ultima task prende tutti gli elementi fino alla fine della lista,
 			// includendo il resto della divisione
-			int end = (taskIndex == actualTasks - 1) ? totalSize : start + workAmount;
+			int end = (taskIndex == nActualTasks - 1) ? totalSize : start + workAmount;
 			for (int j = start; j < end; j++) {
 				action.accept(items.get(j));
 			}

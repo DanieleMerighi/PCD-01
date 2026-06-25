@@ -38,7 +38,7 @@ public class Board {
         return smallBalls.isEmpty();
     }
 
-    public Boundary getBounds(){
+    public Boundary getBounds() {
         return this.bounds;
     }
 

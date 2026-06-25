@@ -48,7 +48,7 @@ public class SimulationCoordinator extends Thread {
     }
 
     private void updateState(long dt) {
-        distributeLinearWork(new Consumer<Ball>() {
+        distributeLinearWork(board.getAllBalls(), new Consumer<Ball>() {
             @Override
             public void accept(Ball ball) {
                 ball.updateState(dt, board);
@@ -144,9 +144,8 @@ public class SimulationCoordinator extends Thread {
         workLatch.await();
     }
 
-    public void distributeLinearWork(final Consumer<Ball> action) {
-        final List<Ball> allBalls = board.getAllBalls();
-        final int totalSize = allBalls.size();
+    public <T> void distributeLinearWork(List<T> items, final Consumer<T> action) {
+        final int totalSize = items.size();
 
         final int nActualWorker = Math.min(workBuffer.size(), totalSize);
         final int workAmount = totalSize / nActualWorker;
@@ -158,7 +157,7 @@ public class SimulationCoordinator extends Thread {
                 int start = idx * workAmount;
                 int end = (idx == nActualWorker - 1) ? totalSize : start + workAmount;
                 for (int j = start; j < end; j++) {
-                    action.accept(allBalls.get(j));
+                    action.accept(items.get(j));
                 }
             }
         }, nActualWorker);

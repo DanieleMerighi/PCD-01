@@ -110,7 +110,7 @@ public class SimulationCoordinator extends Thread {
 		board.applyHumanKick();
 		board.applyBotKick();
 
-		distributeLinearWork(board.getAllBalls(), ball -> {
+		distributeLinearTasks(board.getAllBalls(), ball -> {
 			ball.updateState(dt, board);
 			for (var hole : board.getHoles()) {
 				Ball.resolveHole(ball, hole, board, gameState);
@@ -129,13 +129,13 @@ public class SimulationCoordinator extends Thread {
 		final int totalRows = grid.getRows();
 
 		// Passata PARI
-		distributeWork(
+		runTasks(
 				IntRange.withStep(0, totalRows, 2),
 				this::processRowCollisions
 		);
 
 		// Passata DISPARI
-		distributeWork(
+		runTasks(
 				IntRange.withStep(1, totalRows, 2),
 				this::processRowCollisions
 		);
@@ -165,7 +165,7 @@ public class SimulationCoordinator extends Thread {
 		}
 	}
 
-	public <T> void distributeWork(List<T> items, Consumer<T> action) {
+	public <T> void runTasks(List<T> items, Consumer<T> action) {
 		var work = new ArrayList<Callable<Void>>(items.size());
 		for (var item : items) {
 			work.add(() -> {
@@ -178,12 +178,12 @@ public class SimulationCoordinator extends Thread {
 		} catch (Exception ignored) {}
 	}
 
-	public <T> void distributeLinearWork(List<T> items, Consumer<T> action, int nTasks) {
+	public <T> void distributeLinearTasks(List<T> items, Consumer<T> action, int nTasks) {
 		int totalSize = items.size();
 		int actualTasks = Math.min(nTasks, totalSize);
 		int workAmount = totalSize / actualTasks;
 
-		distributeWork(IntRange.until(actualTasks), taskIndex -> {
+		runTasks(IntRange.until(actualTasks), taskIndex -> {
 			int start = taskIndex * workAmount;
 			int end = (taskIndex == actualTasks - 1) ? totalSize : start + workAmount;
 			for (int j = start; j < end; j++) {
