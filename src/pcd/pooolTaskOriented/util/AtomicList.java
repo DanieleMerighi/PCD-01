@@ -10,8 +10,6 @@ public interface AtomicList<T> {
 
     T get(int index);
 
-    AtomicList<T> subList(int start, int end);
-
     void removeElement(T element);
 
     int size();

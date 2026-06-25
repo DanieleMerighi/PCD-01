@@ -39,24 +39,26 @@ The primary bottlenecks identified are:
 \end{itemize}
 
 \section{System Architecture and Architectural Design}
-This section describes the high level structure of our proposed solution, focusing on the elements of concurrent programming, i.e. the active and passive components at play and their interactions. Visual formalisms, specifically Petri nets, are also used to demonstrate the overall behavior and to allow for preliminary model checking.
+This section describes the high level structure of our proposed solution, focusing on the elements of concurrent programming, including the active and passive components at play and their interactions. Visual formalisms, specifically Petri nets, are also used to demonstrate the overall behavior and to allow for basic model checking.
+
+\subsection{Preliminary Optimizations}
+Before considering a multi-threaded approach, it is possible to improve the collision resolution algorithm significantly. The proposed change will boost the overall performance and, most importantly, will allow for better parallelization efficiency. As this optimization is also applicable to the sequential version, the performance evaluation will take the improved algorithm as the starting point.
+
+Instead of checking for collisions between every pair of balls, the board is divided into a grid of cells such that collisions may only happen within neighboring cells. Although this method introduces an additional phase for the population of the grid at every simulation step, it is linear in the number of balls and drastically reduces the multiplicative constant for the remaining quadratic part.
+
+To be precise, for each cell, collisions are resolved for balls within the cell itself, then against the \textit{forward-neighboring} cells (i.e. the right, down-left, down, and down-right neighbors). In this way, collisions are never resolved twice.
 
 \subsection{Parallelization Strategy}
 Having identified that the physics simulation represents the most taxing part of the program's computation, it will be the focus of our parallelization efforts. Since it is a CPU-bound problem, the goal will be to distribute the work evenly across all logical processors.
 
-Our solution involves a number of worker threads, handled manually in the Thread-Oriented version, and encapsulated by a \texttt{FixedThreadPool} executor in the Task-Oriented version. We have opted for long-living worker threads, implementing Agenda parallelism, which removes any thread creation overhead.
+Our solution involves a number of worker threads, handled manually in the Thread-Oriented version, and encapsulated by a \texttt{FixedThreadPool} executor in the Task-Oriented version. We opted for long-living worker threads, implementing Agenda parallelism, thus removing any thread creation overhead.
 
-Every simulation step consists of three phases: updating ball positions, detecting balls inside holes, resolving collisions. The first two phases are linear in the number of balls, thus it is easy to distribute the work evenly, while the collision phase involves $n(n-1)/2$ checks, requiring a more careful approach.
+Every simulation step consists of three phases: updating ball positions, detecting balls inside holes, and resolving collisions. The first two phases are linear in the number of balls, making it is easy to distribute the work evenly, while the collision phase requires a more careful approach.
 
-We have decided to view the problem as a triangular matrix, having the rows alternate which worker they are assigned to, as depicted in \Cref{fig:collision_parallelization}. For a large number of balls, this makes for a sufficiently even partition.
+We decided to view the problem in terms of grid rows. In the Thread-Oriented version, we distribute the rows to the different worker threads by implementing round-robin scheduling. In the Task-Oriented version, each row constitutes a task which is submitted to the executor. For a sufficiently fine grid, this makes for a quite even partition.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.6\textwidth]{images/collision_parallelization.png}
-    \caption{Matrix representation of the collision resolution phase, showing how the work is partitioned.}
-    \label{fig:collision_parallelization}
-\end{figure}
-
+In both cases, we handle the rows in two successive subphases, according to their parity. Combined with the forward-neighbor strategy, this ensures that rows can be processed concurrently without ever accessing any shared memory.
+%
 \subsection{Active Components}
 The concurrent program's execution involves instances of five active classes, each encapsulating a designated control flow.
 \begin{itemize}
@@ -68,17 +70,15 @@ The concurrent program's execution involves instances of five active classes, ea
 \end{itemize}
 
 \subsection{Monitors}
-All active components are implemented to be pure, meaning that interactions between them happen through the use of synchronized passive components. Our solution makes use of five such classes.
+All active components are implemented to be pure, meaning that interactions between them happen through synchronized passive components. Our solution makes use of five such classes.
 \begin{itemize}
 \item \texttt{BoundedBuffer}, used as the keyboard command buffer.
 \item \texttt{Latch}, handling synchronization between the simulation coordinator and workers in the Thread-Oriented version.
 \item \texttt{SynchCell}, used to assign work to individual workers in the Thread-Oriented version.
+\item \texttt{AtomicReference}, used to manage the concurrent access to the game's mutable state (e.g. the player scores) and the kick velocity of player balls.
+\item \texttt{AtomicList}, used to manage the concurrent access to the mutable collection of balls within the game.
 \end{itemize}
-Of these, \texttt{BoundedBuffer} and \texttt{Latch} are implemented following the standard semantics, while \texttt{SynchCell} features an additional \texttt{end()} method, which is used to signal that no more values will be put into the cell. This also wakes up all threads that happen to be blocked on the \texttt{get()} method, causing an empty \texttt{Optional} to be returned.
-\begin{itemize}
-\item \texttt{GameState}, a custom component encapsulating the game's mutable state, including the current list of small balls and the player scores.
-\item \texttt{Ball}, which is made into a monitor so that worker threads are competing for resources as rarely as possible.
-\end{itemize}
+These monitor classes are implemented following the standard semantics, except for \texttt{SynchCell}, which features an additional \texttt{end()} method, used to signal that no more values will be put into the cell. It wakes up all threads that happen to be blocked on the \texttt{get()} method, causing an empty \texttt{Optional} to be returned.
 
 \subsection{Behavior Overview}
 We use Petri nets to show a simplified view of the program's information flow. At this level of abstraction the events are atomic, due to all monitor procedures being marked as \texttt{synchronized}. This also means that the mutual exclusion to these objects doesn't need to be depicted explicitly, focusing instead on the more high level constructs.

@@ -34,11 +34,6 @@ public class AtomicListImpl<T> implements AtomicList<T> {
 	}
 
 	@Override
-	public synchronized AtomicList<T> subList(int start, int end) {
-		return new AtomicListImpl<>(value.subList(start, end));
-	}
-
-	@Override
 	public synchronized void removeElement(T element) {
 		value.remove(element);
 	}

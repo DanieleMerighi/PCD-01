@@ -13,4 +13,3 @@ public interface AtomicReference<T> {
     void map(Function<? super T, ? extends T> mapper);
 
 }
-
