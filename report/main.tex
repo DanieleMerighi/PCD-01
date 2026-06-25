@@ -122,12 +122,13 @@ This section evaluates the empirical performance gains of the concurrent impleme
 \subsection{Methodology}
 Testing was conducted utilising the \texttt{MassiveBoardConf} configuration (4500 entities) to generate a compute-intensive workload. To ensure measurement accuracy, the physics and collision resolution logic \texttt{updateState()} was isolated. The GUI was disabled to eliminate the interference of the sequential Swing event dispatch thread.
 
-Execution times were recorded using \texttt{System.nanoTime()}. Each configuration executed a 1000-update warm-up phase to allow the JVM Just-In-Time (JIT) compiler and Garbage Collector to stabilise, mitigating dynamic compilation overhead as described in ``Performance of Concurrent Programs'' slides. The following 2000 updates were measured, and the average execution time was calculated across 5 independent runs per configuration.
+Execution times were recorded using \texttt{System.nanoTime()}. Each configuration executed a 10000-update warm-up phase to allow the JVM Just-In-Time (JIT) compiler and Garbage Collector to stabilise, mitigating dynamic compilation overhead as described in ``Performance of Concurrent Programs'' slides. The following 20000 updates were measured, and the average median execution time was calculated across 5 independent runs per configuration.
 
-The baseline sequential execution time ($T_{seq}$) averaged 105.65ms per frame for the task version and 106.17ms for the thread one. The host system for the benchmark featured 12 available logical processors ($N_{cpu} = 12$).
+The baseline sequential execution time ($T_{seq}$) averaged 3.637ms per frame for the task version and 3.727ms for the thread one. The host system for the benchmark featured 12 available logical processors (6 physical execution units with Simultaneous
+Multithreading) $N_{cpu} = 12$.
 
 \subsection{Concurrent vs. Sequential Advantage}
-To evaluate how much the concurrent version improves upon the sequential one, Speedup ($S$) was calculated using the formula $S = T_{seq} / T_N$, where $T_N$ is the execution time with $N$ workers.
+To evaluate how much the concurrent version improves upon the sequential one, Speedup ($S$) was calculated using the formula $S = T_{seq} / T_N$, where $T_N$ is the execution time with $N$ workers and $T_{seq}$ is the time with 1 worker.
 
 \begin{table}[H]
     \centering
@@ -135,18 +136,21 @@ To evaluate how much the concurrent version improves upon the sequential one, Sp
         \toprule
         \textbf{Workers} & \textbf{Task Time} & \textbf{Thread Time} & \textbf{Task Speedup} & \textbf{Thread Speedup} \\
         & \textbf{(ms)} & \textbf{(ms)} \\ \midrule
-        1 & 105.65 & 106.17 & 1.00x & 1.00x \\
-        2 & 55.96 & 56.76 & 1.89x & 1.87x \\
-        4 & 30.48 & 30.92 & 3.47x & 3.43x \\
-        8 & 23.11 & 23.51 & 4.57x & 4.52x \\
-        \textbf{12} & \textbf{16.74} & \textbf{18.31} & \textbf{6.31x} & \textbf{5.80x} \\
-        13 & 21.92 & 22.67 & 4.82x & 4.68x \\ \bottomrule
+        1 & 3.727 & 3.637 & 1.00x & 1.00x \\
+        2 & 2.093 & 2.302 & 1.78x & 1.58x \\
+        4 & 1.443 & 1.455 & 2.58x & 2.50x \\
+        6 & 1.158 & 1.113 & 3.22x & 3.27x \\
+        8 & \textbf{1.039} & 1.006 & \textbf{3.58x} & 3.61x \\
+        10 & 1.056 & \textbf{0.985} & 3.53x & \textbf{3.69x} \\
+        11 & 1.062 & 1.008 & 3.51x & 3.61x \\
+        12 & 1.064 & 1.026 & 3.50x & 3.55x \\
+        13 & 1.062 & 1.062 & 3.51x & 3.42x \\ \bottomrule
     \end{tabular}
     \caption{Average execution time and Speedup for Task-Oriented and Thread-Oriented architectures.}
     \label{tab:speedup}
 \end{table}
 
-The empirical data demonstrate a definitive advantage of concurrent execution. The Task-Oriented implementation (utilising the Executor framework) achieves a peak speedup of 6.31x at 12 workers, reducing the frame computation time from 105.65 ms to 16.74 ms. The Thread-Oriented architecture yields a similar peak speedup of 5.80x (18.31 ms). This confirms that distributing the physics workload across multiple active components substantially accelerates execution compared to the sequential variant.
+The empirical data demonstrate a definitive advantage of concurrent execution. The Task-Oriented implementation (utilising the Executor framework) achieves a peak speedup of 3.58x at 8 workers, reducing the frame computation time from 3.727ms to 1.039ms. The Thread-Oriented architecture yields a similar peak speedup of 3.69x (0.985ms). This confirms that distributing the physics workload across multiple active components substantially accelerates execution compared to the sequential variant.
 
 \subsection{Core Exploitation and Scalability}
 To assess how effectively the program exploits available cores, Efficiency ($E$) was calculated using the formula $E = S / N$.
@@ -157,11 +161,14 @@ To assess how effectively the program exploits available cores, Efficiency ($E$)
         \toprule
         \textbf{Workers} & \textbf{Task Efficiency} & \textbf{Thread Efficiency} \\ \midrule
         1 & 1.00 & 1.00 \\
-        2 & 0.94 & 0.94 \\
-        4 & 0.87 & 0.86 \\
-        8 & 0.57 & 0.56 \\
-        \textbf{12} & \textbf{0.53} & \textbf{0.48} \\
-        13 & 0.37 & 0.36 \\ \bottomrule
+        2 & 0.89 & 0.79 \\
+        4 & 0.65 & 0.63 \\
+        6 & 0.54 & 0.54 \\
+        8 & 0.45 & 0.45 \\
+        10 & 0.35 & 0.37 \\
+        11 & 0.32 & 0.33 \\
+        12 & 0.29 & 0.30 \\
+        13 & 0.27 & 0.26 \\ \bottomrule
     \end{tabular}
     \caption{Computational Efficiency scaling per worker count.}
     \label{tab:efficiency}
@@ -174,13 +181,11 @@ To assess how effectively the program exploits available cores, Efficiency ($E$)
     \label{fig:efficiency_plot}
 \end{figure}
 
-The application exhibits high efficiency ($> 86\%$) when scaling from 1 to 4 workers. The computation-heavy nature of the collision detection algorithm allows the processors to be exploited directly with minimal synchronisation penalties.
+The application exhibits good efficiency ($> 63\%$) when scaling from 1 to 4 workers. The computation-heavy nature of the collision detection algorithm allows the processors to be exploited directly with minimal synchronisation penalties.
 
-However, efficiency decays as the worker count increases. At 8 workers, efficiency drops to 57\%, and at the $N_{cpu}$ limit of 12 workers, it falls to 53\% (Task-Oriented). This sub-linear scaling is caused by multithreading costs, specifically context switching and lock contention over the shared structures tracking the game state.
+However, efficiency decays as the worker count increases. At 8 workers, efficiency drops to 45\%, and at the $N_{cpu}$ limit of 12 workers, it falls to 30\% (Thread-Oriented). This sub-linear scaling is caused by multithreading costs, specifically context switching and lock contention over the shared structures tracking the game state.
 
-Testing with 13 workers ($N_{cpu} + 1$) caused a performance regression. While deploying $N_{cpu} + 1$ threads is a standard heuristic to prevent CPU cycle waste during page faults, the collision resolution task is strictly CPU-bound without blocking I/O operations. Consequently, oversubscribing the CPU forced thread scheduling overhead, dropping efficiency below 40\%.
-
-Overall, the Task-Oriented framework proved slightly more effective at exploiting cores than the Thread-Oriented approach, maintaining lower structural overhead per unit of work distributed.
+Overall, the Task-Oriented framework proved slightly more effectiveness at exploiting cores than the Thread-Oriented approach, maintaining lower structural overhead per unit of work distributed. At least until 8 workers, when the access of the bag of task from multiple threads might have issued the performance of that approach.
 
 \subsection{Theoretical Limits and Amdahl's Law Analysis}
 
@@ -193,20 +198,21 @@ Overall, the Task-Oriented framework proved slightly more effective at exploitin
 
 To mathematically contextualise the deviation from the ideal linear speedup shown in Figure \ref{fig:speedup_plot}, Amdahl's Law is applied. This principle states that the maximum achievable speedup is strictly bounded by the fraction of the algorithm that can be made parallel (P)
 
-Using the peak empirical speedup ($S = 6.31$) achieved with $N = 12$ workers in the Task-Oriented architecture, the exact sequential and parallelizable ($P$) proportions of the application can be derived:
-$$ S = \frac{1}{1 - P + \frac{P}{N}} \implies 6.31 = \frac{1}{1 - P + \frac{P}{12}} $$
-Solving for $P = \frac{5.31 \times 12}{6.31 \times 11}$, it is determined that the highly parallelizable portion of the program is $P \approx 0.918$ ($91.8\%$).
+Using the peak empirical speedup ($S = 3.69$) achieved with $N = 10$ workers in the Thread-Oriented architecture, the exact sequential and parallelizable ($P$) proportions of the application can be derived:
+$$ S = \frac{1}{1 - P + \frac{P}{N}} \implies 3.69 = \frac{1}{1 - P + \frac{P}{10}} $$
+Solving for $P = \frac{2.69 \times 10}{3.69 \times 9}$, it is determined that the highly parallelizable portion of the program is $P \approx 0.81$ ($81\%$).
 
 \begin{itemize}
-    \item \textbf{The Parallelizable $91.8\%$:} This vast majority of execution time is successfully distributed across the worker pool. It comprises the $O(n^2)$ nested loop evaluating elastic collisions and the linear passes updating entity positions and resolving boundary bounces.
-    \item \textbf{The Sequential $8.2\%$ (The Bottleneck):} This unscalable fraction prevents the application from reaching ideal efficiency. Code analysis of the \texttt{Simulation Coordinator} isolates this bottleneck to:
+    \item \textbf{The Parallelizable $81\%$:} This vast majority of execution time is successfully distributed across the worker pool. It comprises evaluating elastic collisions, updating entity positions and resolving boundary bounces.
+    \item \textbf{The Sequential $19\%$ (The Bottleneck):} This unscalable fraction prevents the application from reaching ideal efficiency. Code analysis of the \texttt{Simulation Coordinator} isolates this bottleneck to:
     \begin{itemize}
         \item \textbf{Barrier Synchronization Overhead:} The coordinating thread must block and wait for all workers to complete their discrete tasks via \texttt{invokeAll(work)} or \texttt{Latch.await()} before proceeding to the next frame computation step.
+        \item \textbf{Human and Bot kicks:} The action of kicking the ball are done sequentially in the main thread (after beeing putted in queue).
         \item \textbf{Centralized State Evaluation:} Operations such as checking \texttt{isGameOver()} and verifying if any small balls remain are inherently sequential and execute solely on the primary thread, even if some worker would be ready for more work.
-        \item \textbf{Loop and Timing Mechanics:} System clock polling and FPS calculations executed within the main \texttt{while} loop contribute to the baseline serial execution cost.
+        \item \textbf{Grid creation:} This represents the main sequential cost. The grid needs to be cleared and then populated.
     \end{itemize}
 \end{itemize}
-This $8.2\%$ structural bottleneck accurately explains why the efficiency curve decays from $94\%$ at 2 workers to $53\%$ at 12 workers, visually validating the theoretical limits predicted by Amdahl's Law.
+This $19\%$ structural bottleneck accurately explains why the speedup does not grow proportionally as the number of cores increase, visually validating the theoretical limits predicted by Amdahl's Law.
 
 \section{Program Verification and Model Checking}
 

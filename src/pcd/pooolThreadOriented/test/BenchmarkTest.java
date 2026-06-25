@@ -17,7 +17,7 @@ import java.util.Locale;
 public class BenchmarkTest {
     public static void main(String[] args) {
         int nCores = Runtime.getRuntime().availableProcessors();
-        int[] workerConfigs = {nCores + 1, nCores, 11, 10, 8, 6, 4, 2, 1};
+        int[] workerConfigs = {1, 2, 4, 6, 8, 10, 11, nCores, nCores + 1};
         int runsPerConfig = 5;
 
         String csvFile = "benchmark_results_thread.csv";
