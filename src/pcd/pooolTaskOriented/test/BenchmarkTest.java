@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Locale;
 
 public class BenchmarkTest {
     public static void main(String[] args) {
@@ -43,8 +44,8 @@ public class BenchmarkTest {
                     double mean = updater.getMeanTimeMs();
                     double median = updater.getMedianTimeMs();
 
-                    writer.printf("%d,%d,%.4f,%.4f\n", workers, run, mean, median);
-                    System.out.printf("Done. Median: %.4f ms (Mean: %.4f ms)\n", median, mean);
+                    writer.printf(Locale.US, "%d,%d,%.4f,%.4f\n", workers, run, mean, median);
+                    System.out.printf(Locale.US,"Done. Median: %.4f ms (Mean: %.4f ms)\n", median, mean);
                 }
             }
             System.out.println("Task-Oriented benchmark completed.");

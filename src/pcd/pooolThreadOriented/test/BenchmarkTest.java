@@ -12,11 +12,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class BenchmarkTest {
     public static void main(String[] args) {
         int nCores = Runtime.getRuntime().availableProcessors();
-        int[] workerConfigs = {1, 2, 4, 6, 8, 10, 11, nCores, nCores + 1};
+        int[] workerConfigs = {nCores + 1, nCores, 11, 10, 8, 6, 4, 2, 1};
         int runsPerConfig = 5;
 
         String csvFile = "benchmark_results_thread.csv";
@@ -43,8 +44,8 @@ public class BenchmarkTest {
                     double mean = coordinator.getMeanTimeMs();
                     double median = coordinator.getMedianTimeMs();
 
-                    writer.printf("%d,%d,%.4f,%.4f\n", workers, run, mean, median);
-                    System.out.printf("Done. Median: %.4f ms (Mean: %.4f ms)\n", median, mean);
+                    writer.printf(Locale.US, "%d,%d,%.4f,%.4f\n", workers, run, mean, median);
+                    System.out.printf(Locale.US,"Done. Median: %.4f ms (Mean: %.4f ms)\n", median, mean);
                 }
             }
         } catch (IOException e) {
