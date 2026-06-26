@@ -2,7 +2,7 @@ target = pcd.pooolThreadOrientedJpf.scenarios.ActualCollisionJpf
 
 classpath = /pcd-jpf/target/classes
 
-#listener = gov.nasa.jpf.listener.PreciseRaceDetector
-listener = gov.nasa.jpf.listener.DeadlockAnalyzer
+listener = gov.nasa.jpf.listener.PreciseRaceDetector
+#listener = gov.nasa.jpf.listener.DeadlockAnalyzer
 
 report.console.property_violation = error,trace

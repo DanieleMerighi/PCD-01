@@ -224,7 +224,7 @@ JPF supports only Java 11 and does not scale to arbitrary program sizes, because
 
 The view, the keyboard controller, the board observers, and the \texttt{BotUpdater} were removed to keep the state space tractable for JPF. \texttt{BotUpdater} also relied on \texttt{java.util.Random}, which JPF treats as an unbounded non-deterministic choice generator. \texttt{Record} declarations and \texttt{switch} expressions were rewritten in pre-Java 14 form. The lambdas inside \texttt{distributeWork} were replaced with anonymous inner classes, because JPF historically does not handle \texttt{invokedynamic} reliably. A bounded counter \texttt{maxTicks} was added to the coordinator to guarantee termination, as JPF requires the program to halt before it can certify any property. A constant tick interval replaced \texttt{System.currentTimeMillis()}, which under JPF does not advance.
 
-The collision phase now uses a spatial grid. Its production size (150 cells) made even the two-ball base run run out of memory, so for JPF the cell size was enlarged with a single constant (\texttt{maxRadius} from $0.1$ to $0.5$), reducing the grid to 6 cells. This loses no collisions, because the balls are far smaller than a cell, and still keeps both workers busy in the collision phase.
+The collision phase now uses a spatial grid. Its production size (150 cells) made even the two-ball base run run out of memory, so for JPF the cell size was enlarged with a single constant (\texttt{maxRadius} set to $0.4$), reducing the grid to 12 cells. This loses no collisions, because the balls are far smaller than a cell. The value is also the largest one that still yields three grid rows: the collision phase distributes rows across workers in two passes (even rows, then odd rows), and with only two rows both passes map to the same worker, leaving the second worker idle. Three rows give each of the two workers a row in the even pass, so the concurrency of the collision phase is actually exercised.
 
 The base configuration used \texttt{MinimalBoardConf}, two workers, and two ticks. The listener \texttt{PreciseRaceDetector} was active in addition to the default \texttt{NotDeadlockedProperty}.
 
@@ -256,24 +256,24 @@ The \texttt{MinimalBoardConf} configuration exercises only one termination branc
     \begin{tabular}{@{}lcrrr@{}}
         \toprule
         \textbf{Scenario} & \textbf{Outcome} & \textbf{Time} & \textbf{States} & \textbf{End} \\ \midrule
-        \texttt{PooolJpf} (base)           & no errors & 13:23 & 4\,456\,653 & 968 \\
-        \texttt{HumanFallsImmediately}     & no errors & 04:12 & 1\,245\,177 & 968 \\
-        \texttt{AllSmallBallsFallTogether} & no errors & 05:50 & 1\,713\,266 & 968 \\
-        \texttt{BoundaryCollision}         & no errors & 14:39 & 4\,503\,405 & 968 \\
-        \texttt{ActualCollision}           & no errors & 14:50 & 4\,548\,759 & 968 \\
-        \texttt{HumanAndBotFallSameTick}   & no errors & 04:22 & 1\,268\,577 & 1\,936 \\
-        \texttt{MoreWorkersThanBalls}      & no errors & 39:23 & 9\,812\,120 & 6\,038 \\
+        \texttt{PooolJpf} (base)           & no errors & 17:27 & 5\,248\,431 & 968 \\
+        \texttt{HumanFallsImmediately}     & no errors & 04:30 & 1\,368\,357 & 968 \\
+        \texttt{AllSmallBallsFallTogether} & no errors & 05:12 & 1\,559\,076 & 968 \\
+        \texttt{BoundaryCollision}         & no errors & 16:05 & 5\,115\,565 & 968 \\
+        \texttt{ActualCollision}           & no errors & 20:01 & 5\,964\,275 & 968 \\
+        \texttt{HumanAndBotFallSameTick}   & no errors & 04:24 & 1\,403\,211 & 1\,936 \\
+        \texttt{MoreWorkersThanBalls}      & no errors & 36:16 & 8\,889\,535 & 6\,038 \\
         \bottomrule
     \end{tabular}
-    \caption{JPF verification results on \texttt{pooolThreadOrientedJpf} with the spatial-grid collision phase. Two workers and two ticks, three workers for \texttt{MoreWorkersThanBalls}, with \texttt{DeadlockAnalyzer} as listener and \texttt{NotDeadlockedProperty} active by default. Times are wall clock.}
+    \caption{JPF verification results on \texttt{pooolThreadOrientedJpf} with the spatial-grid collision phase. Two workers and two ticks, three workers for \texttt{MoreWorkersThanBalls}, with \texttt{PreciseRaceDetector} as listener and \texttt{NotDeadlockedProperty} active by default. Times are wall clock.}
     \label{tab:jpf_results}
 \end{table}
 
-Every scenario completed without violations, including \texttt{MoreWorkersThanBalls}, which had been the only intractable case under the previous collision algorithm. With the earlier flat triangular-matrix resolution that scenario saturated the 2 GB heap of JPF after seven and a half hours and around 94 million new states, and a retry with fewer balls still failed to terminate in practical time. The spatial-grid version completes it in 39 minutes within 440 MB. The gain came entirely from the smaller grid: fewer cells mean fewer shared read-write locations per tick, which is what the verifier's state space counts. Its \texttt{end = 6\,038}, against 968 elsewhere, reflects the extra termination orderings introduced by the third worker.
+Every scenario completed without violations, including \texttt{MoreWorkersThanBalls}, which had been the only intractable case under the previous collision algorithm. With the earlier flat triangular-matrix resolution that scenario saturated the 2 GB heap of JPF after seven and a half hours and around 94 million new states, and a retry with fewer balls still failed to terminate in practical time. The spatial-grid version completes it in 36 minutes within 413 MB. The gain came entirely from the smaller grid: fewer cells mean fewer shared read-write locations per tick, which is what the verifier's state space counts. Its \texttt{end = 6\,038}, against 968 elsewhere, reflects the extra termination orderings introduced by the third worker.
 
 One result is worth highlighting. \texttt{HumanAndBotFallSameTickJpf} terminated with \texttt{end = 1\,936}, exactly twice the value observed in all other scenarios. The doubling is direct evidence that JPF explored both orderings of the concurrent \texttt{endGame()} calls: human winning the race against bot winning the race, each producing a different \texttt{gameResult} string. The result confirms that the \texttt{synchronized} declaration on \texttt{GameState.endGame} preserves consistency under both orderings, with no intermediate or corrupted state visible.
 
-The suite was run with the \texttt{DeadlockAnalyzer} listener. This is sound because a run of the base configuration under \texttt{DeadlockAnalyzer} and one under \texttt{PreciseRaceDetector} produced the same state count, end count, and maximum depth: the two listeners do not alter the explored state space. Deadlock detection is performed by the default \texttt{NotDeadlockedProperty} regardless of the listener, which only enriches the diagnostic output in case of violation. The race fix described above had already been certified under \texttt{PreciseRaceDetector}, and \texttt{resolveCollision}, the only place a race was ever found, is unchanged by the grid rewrite. Re-running the suite under the race detector would therefore add cost without coverage.
+The suite was run with the \texttt{PreciseRaceDetector} listener, which certifies the absence of data races, while deadlock detection is provided by the default \texttt{NotDeadlockedProperty} that is active regardless of the listener. A single run therefore covers both properties. This is the configuration in which the collision phase genuinely engages both workers: with the three-row grid the even pass schedules one row on each worker, so \texttt{resolveCollision}, the only place a race was ever found, is now exercised under concurrent reads and writes from a second worker rather than on a single one. No race was reported in any scenario, confirming that the getter fix holds across all interleavings of the two-worker collision phase.
 
 \subsection{Task-oriented Variant and Modelling Limits of JPF}
 
