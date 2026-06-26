@@ -19,7 +19,7 @@ public class Board {
     private final Ball humanBall;
     private final Ball botBall;
     private final AtomicReference<V2d> humanKick;
-    private final AtomicReference<V2d> botKick;
+    private final AtomicReference<Boolean> botKick;
     private final List<Ball> smallBalls;
     private final GameState state;
     private final Random random;
@@ -28,7 +28,7 @@ public class Board {
         humanBall = conf.getHumanBall();
         botBall = conf.getBotBall();
         humanKick = new AtomicReferenceImpl<>(null);
-        botKick = new AtomicReferenceImpl<>(null);
+        botKick = new AtomicReferenceImpl<>(false);
         smallBalls = new ArrayList<>(conf.getSmallBalls());
         state = new GameState();
         bounds = conf.getBoardBoundary();
@@ -42,15 +42,7 @@ public class Board {
     }
 
     public void kickBotBall() {
-        var botPos = botBall.getPos();
-        double angle;
-        int attempts = 0;
-        do {
-            angle = random.nextDouble() * Math.PI * 2;
-            attempts++;
-        } while (attempts < 20 && isAngleDangerous(angle, botPos));
-        var v = new V2d(Math.cos(angle), Math.sin(angle)).mul(KICK_SPEED);
-        botKick.set(v);
+        botKick.set(true);
     }
 
     public List<Ball> getAllBalls() {
@@ -75,10 +67,19 @@ public class Board {
     }
 
     public void applyBotKick() {
-        var vel = botKick.getAndSet(null);
-        if (vel != null) {
-            botBall.kick(vel);
+        var isKickRequested = botKick.getAndSet(false);
+        if (!isKickRequested) {
+            return;
         }
+        var botPos = botBall.getPos();
+        double angle;
+        int attempts = 0;
+        do {
+            angle = random.nextDouble() * Math.PI * 2;
+            attempts++;
+        } while (attempts < 20 && isAngleDangerous(angle, botPos));
+        var v = new V2d(Math.cos(angle), Math.sin(angle)).mul(KICK_SPEED);
+        botBall.kick(v);
     }
 
     public Boundary getBounds(){
